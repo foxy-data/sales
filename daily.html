@@ -39,7 +39,6 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1200px;
             table-layout: fixed;
         }
 
@@ -49,7 +48,7 @@
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 7px 6px;
+            padding: 7px 4px;
             color: #1d1d1f;
             border-bottom: 1px solid #d2d2d7;
             background: white;
@@ -62,9 +61,9 @@
 
         th {
             text-align: left;
-            padding: 5px 6px;
+            padding: 5px 4px;
             color: #86868b;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
             text-transform: uppercase;
             border-bottom: 1px solid #d2d2d7;
@@ -79,9 +78,9 @@
         th.g-checks { color: #af52de; }
 
         td {
-            padding: 5px 6px;
+            padding: 4px 3px;
             border-bottom: 1px solid #f2f2f4;
-            font-size: 12px;
+            font-size: 11px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -89,35 +88,37 @@
 
         .grp-start { border-left: 2px solid #d2d2d7 !important; }
 
+        /* STICKY ім'я */
         .name-cell, th:first-child {
             position: sticky;
             left: 0;
             background: white;
             z-index: 10;
-            width: 90px;
-            min-width: 90px;
-            max-width: 90px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            box-shadow: 2px 0 5px rgba(0,0,0,0.07);
             font-weight: 600;
-            font-size: 11px;
             white-space: normal;
             line-height: 1.2;
-            padding: 5px 5px;
+            word-break: break-word;
         }
         th:first-child { z-index: 11; }
 
-        .val-plan, .val-fact, .val-pct { padding: 2px 4px !important; }
         .cell-badge {
-            display: block; border-radius: 7px; font-size: 11px; font-weight: 600;
-            text-align: center; padding: 2px 4px; white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis;
+            display: block;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            text-align: center;
+            padding: 2px 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        .badge-plan              { background: rgba(134,134,139,0.10); color: #6e6e73; font-weight: 500; font-size: 10px; }
-        .badge-fact-to           { background: rgba(0,113,227,0.12);   color: #1a50b8; }
-        .badge-fact-serv         { background: rgba(52,199,89,0.12);   color: #1a7f37; }
-        .badge-fact-acc          { background: rgba(255,149,0,0.12);   color: #b85000; }
-        .badge-fact-checks       { background: rgba(175,82,222,0.12);  color: #6d28d9; }
-        .badge-fact-none         { background: rgba(134,134,139,0.08); color: #3d3d3f; }
+        .badge-plan        { background: rgba(134,134,139,0.10); color: #6e6e73; font-weight: 500; font-size: 9px; }
+        .badge-fact-to     { background: rgba(0,113,227,0.12);   color: #1a50b8; }
+        .badge-fact-serv   { background: rgba(52,199,89,0.12);   color: #1a7f37; }
+        .badge-fact-acc    { background: rgba(255,149,0,0.12);   color: #b85000; }
+        .badge-fact-checks { background: rgba(175,82,222,0.12);  color: #6d28d9; }
+        .badge-fact-none   { background: rgba(134,134,139,0.08); color: #3d3d3f; }
 
         .time-row td           { background: #f5f5f7 !important; font-weight: 700; color: #333; }
         .time-row td.name-cell { background: #f5f5f7 !important; }
@@ -127,50 +128,77 @@
         .loading { padding: 40px; text-align: center; color: #86868b; }
         .error   { padding: 40px; text-align: center; color: #ff3b30; }
 
-        @media (max-width: 767px) {
-            .table-card {
-                scroll-snap-type: x proximity;
-                scroll-behavior: smooth;
-                scroll-padding-left: 100px;
-                -webkit-overflow-scrolling: touch;
-                overscroll-behavior-x: contain;
-            }
-
-            table { min-width: 900px; }
+        /* ===================== ДЕСКТОП ===================== */
+        @media (min-width: 768px) {
+            table { min-width: 1100px; }
 
             .name-cell, th:first-child {
-                width: 100px;
-                min-width: 100px;
-                max-width: 100px;
-                font-size: 9.5px;
-                padding: 5px 4px;
+                width: 110px; min-width: 110px; max-width: 110px;
+                font-size: 11px;
+                padding: 5px 6px;
+            }
+
+            /* план */
+            .col-plan  { width: 72px; }
+            /* факт */
+            .col-fact  { width: 90px; }
+            /* % або доля */
+            .col-pct   { width: 70px; }
+            /* share (Доля послуг / Доля ACC) */
+            .col-share { width: 70px; }
+
+            td { font-size: 12px; padding: 5px 5px; }
+            th { font-size: 10px; padding: 5px 5px; }
+            .cell-badge { font-size: 11px; padding: 2px 5px; }
+        }
+
+        /* ===================== МОБІЛЬНИЙ =====================
+           Мета: ПК (вузько) + Товарообіг (3 кол) + Послуги (3-4 кол) + АСС (3 кол) — все видно
+           Екран ~390px → доступно ~310px після sticky ПК (~80px)
+           3 колонки по ~70px = 210px  → ок для однієї групи
+           Скролимо між групами snap'ом
+        */
+        @media (max-width: 767px) {
+            table {
+                /* мінімальна ширина = sticky(80) + 3групи×3кол×62px ≈ 640px */
+                min-width: 640px;
+            }
+
+            .name-cell, th:first-child {
+                width: 80px; min-width: 80px; max-width: 80px;
+                font-size: 9px;
+                padding: 4px 3px;
                 z-index: 20 !important;
                 background: white;
                 background-clip: padding-box;
-                box-shadow: 4px 0 10px -2px rgba(0,0,0,0.14);
+                box-shadow: 4px 0 8px -2px rgba(0,0,0,0.15);
                 border-right: 1px solid #e0e0e5;
             }
             th:first-child { z-index: 21 !important; }
 
-            td:not(.name-cell), th:not(:first-child) {
-                position: relative;
-                z-index: 1;
+            /* Усі звичайні колонки — однакова ширина */
+            .col-plan, .col-fact, .col-pct, .col-share {
+                width: 58px;
             }
 
-            th, td {
-                min-width: calc((100vw - 100px) / 2.7);
-                max-width: calc((100vw - 100px) / 2.7);
-                font-size: 10.5px;
-                padding: 5px 4px;
+            td { font-size: 10px; padding: 3px 2px; }
+            th { font-size: 8px;  padding: 4px 2px; }
+            th.group-header { font-size: 8px; padding: 5px 2px; }
+
+            .cell-badge {
+                font-size: 9px;
+                padding: 2px 2px;
+                border-radius: 5px;
             }
 
-            th:nth-child(2), td:nth-child(2) { scroll-snap-align: start; }
-            th:nth-child(5), td:nth-child(5) { scroll-snap-align: start; }
-            th:nth-child(8), td:nth-child(8) { scroll-snap-align: start; }
-            th:nth-child(11), td:nth-child(11) { scroll-snap-align: start; }
-            th:nth-child(12), td:nth-child(12) { scroll-snap-align: start; }
+            /* Scroll snap по групах */
+            .table-card {
+                scroll-snap-type: x proximity;
+                scroll-padding-left: 80px;
+            }
 
-            td, th { scroll-snap-stop: normal; }
+            /* Snap на початку кожної групи (2-га, 5-та, 9-та... залежить від кількості колонок)
+               Задаємо через JS після рендеру, але базово — по grp-start */
         }
     </style>
 </head>
@@ -215,9 +243,9 @@ function colInfo(h) {
     else if (u === 'ЧЕКИ' || u === 'ЧЕК' || u.startsWith('ПЛАН ЧЕК') || u.startsWith('ФАКТ ЧЕК') || u.startsWith('% ЧЕК')) g = 'checks';
     else if (u.includes(' ТО') || u.startsWith('ТО') || u.endsWith('ТО')) g = 'to';
 
-    if      (u.includes('ПЛАН'))                             t = 'plan';
-    else if (u.includes('%') || u.includes('ВИКО'))          t = 'pct';
-    else if (u.includes('ДОЛЯ') || u.includes('SHARE'))      t = 'share';
+    if      (u.includes('ПЛАН'))                         t = 'plan';
+    else if (u.includes('%') || u.includes('ВИКО'))      t = 'pct';
+    else if (u.includes('ДОЛЯ') || u.includes('SHARE'))  t = 'share';
     return { g, t };
 }
 
@@ -236,7 +264,7 @@ function fmtPct(v) {
     let n = toNum(v);
     const s = v ? v.toString() : '';
     if (!s.includes('%') && n > 0 && n < 2) n *= 100;
-    return n.toFixed(2) + '%';
+    return n.toFixed(1) + '%';
 }
 function pctBg(v) {
     let n = toNum(v);
@@ -253,7 +281,6 @@ function pctBg(v) {
 // ===== THEAD =====
 function buildThead(headers) {
     const thead = document.getElementById('thead');
-
     const groups = [];
     let cur = null;
     for (let i = 1; i < headers.length; i++) {
@@ -279,9 +306,15 @@ function buildThead(headers) {
     const tr2 = document.createElement('tr');
     let prevG = '';
     for (let i = 1; i < headers.length; i++) {
-        const { g } = colInfo(headers[i]);
+        const { g, t } = colInfo(headers[i]);
         const th = document.createElement('th');
         th.className = (g ? 'g-'+g : '');
+        // клас ширини
+        if (t === 'plan')  th.classList.add('col-plan');
+        else if (t === 'pct')   th.classList.add('col-pct');
+        else if (t === 'share') th.classList.add('col-share');
+        else                    th.classList.add('col-fact');
+
         if (g !== prevG) th.classList.add('grp-start');
         prevG = g;
         const lbl = headers[i].trim().toUpperCase();
@@ -297,21 +330,16 @@ function colorizeShareCols(headers) {
     const tbody = document.getElementById('tbody');
     if (!tbody) return;
 
-    // Знаходимо індекси колонок з типом 'share' (Доля послуг, Доля ACC тощо)
     const shareColIndexes = [];
     for (let i = 1; i < headers.length; i++) {
-        const { t } = colInfo(headers[i]);
-        if (t === 'share') shareColIndexes.push(i); // i = індекс td у рядку
+        if (colInfo(headers[i]).t === 'share') shareColIndexes.push(i);
     }
     if (!shareColIndexes.length) return;
 
     shareColIndexes.forEach(colIdx => {
         const cells = [];
-        const rows = tbody.querySelectorAll('tr:not(.time-row):not(.summary-row)');
-
-        rows.forEach(tr => {
-            const tds = tr.querySelectorAll('td');
-            const td = tds[colIdx];
+        tbody.querySelectorAll('tr:not(.time-row):not(.summary-row)').forEach(tr => {
+            const td = tr.querySelectorAll('td')[colIdx];
             if (!td) return;
             const badge = td.querySelector('.cell-badge');
             const raw = badge ? badge.textContent.trim() : td.textContent.trim();
@@ -320,21 +348,42 @@ function colorizeShareCols(headers) {
         });
 
         if (!cells.length) return;
-
-        const values = cells.map(c => c.num);
-        const min = Math.min(...values);
-        const max = Math.max(...values);
+        const vals = cells.map(c => c.num);
+        const min = Math.min(...vals), max = Math.max(...vals);
         const range = max - min || 1;
 
         cells.forEach(({ badge, num }) => {
             if (!badge) return;
-            const ratio = (num - min) / range; // 0 = мін → червоне, 1 = макс → зелене
-            const hue = Math.round(ratio * 120);        // 0° червоний → 120° зелений
-            const lightness = Math.round(88 - ratio * 10); // 88% → 78%
-            const textL    = Math.round(28 + ratio * 10);  // 28% → 38%
-            badge.style.background = `hsl(${hue}, 70%, ${lightness}%)`;
-            badge.style.color      = `hsl(${hue}, 60%, ${textL}%)`;
+            const ratio = (num - min) / range;
+            const hue  = Math.round(ratio * 120);
+            const lBg  = Math.round(88 - ratio * 10);
+            const lFg  = Math.round(28 + ratio * 10);
+            badge.style.background = `hsl(${hue},70%,${lBg}%)`;
+            badge.style.color      = `hsl(${hue},60%,${lFg}%)`;
         });
+    });
+}
+
+// ===== SNAP по grp-start колонках =====
+function applySnapToGroupStarts() {
+    if (window.innerWidth >= 768) return;
+    // Знаходимо індекси td де є grp-start і виставляємо scroll-snap-align
+    const rows = document.querySelectorAll('#tbody tr');
+    if (!rows.length) return;
+    const firstRow = rows[0];
+    firstRow.querySelectorAll('td').forEach((td, i) => {
+        if (i === 0) return;
+        if (td.classList.contains('grp-start')) {
+            // виставляємо snap через stylesheet
+            td.style.scrollSnapAlign = 'start';
+        }
+    });
+    // те саме для thead
+    document.querySelectorAll('#thead tr:last-child th').forEach((th, i) => {
+        if (i === 0) return;
+        if (th.classList.contains('grp-start')) {
+            th.style.scrollSnapAlign = 'start';
+        }
     });
 }
 
@@ -350,17 +399,6 @@ async function load() {
         const headers = rows[0];
         document.getElementById('loader').style.display = 'none';
         document.getElementById('tbl').style.display = '';
-
-        const cg = document.getElementById('cg');
-        cg.innerHTML = '';
-        const mkCol = w => { const col = document.createElement('col'); col.style.width = w; return col; };
-        cg.appendChild(mkCol('20%'));
-        for (let i = 1; i < headers.length; i++) {
-            const {t} = colInfo(headers[i]);
-            if (t === 'plan') cg.appendChild(mkCol('10%'));
-            else if (t === 'pct') cg.appendChild(mkCol('14%'));
-            else cg.appendChild(mkCol('18%'));
-        }
 
         buildThead(headers);
 
@@ -386,29 +424,30 @@ async function load() {
             let prevG = '';
             for (let i = 1; i < headers.length; i++) {
                 const { g, t } = colInfo(headers[i]);
-                const val      = (row[i] || '').trim();
-                const isStart  = g !== prevG;
+                const val = (row[i] || '').trim();
+                const isStart = g !== prevG;
                 prevG = g;
 
                 const td = document.createElement('td');
                 if (isStart && g) td.classList.add('grp-start');
 
+                // клас ширини для td
+                if (t === 'plan')       td.classList.add('col-plan');
+                else if (t === 'pct')   td.classList.add('col-pct');
+                else if (t === 'share') td.classList.add('col-share');
+                else                    td.classList.add('col-fact');
+
                 if (t === 'pct' && !isTime) {
                     const { bg, fg } = pctBg(val);
-                    td.className = 'val-pct' + (g ? ' g-'+g : '');
+                    td.className += ' val-pct' + (g ? ' g-'+g : '');
                     if (isStart && g) td.classList.add('grp-start');
-                    const pctTxt = val ? fmtPct(val) : '';
-                    td.innerHTML = '<span class="cell-badge" style="background:'+bg+';color:'+(isSummary?'#1d1d1f':fg)+'">'+pctTxt+'</span>';
+                    td.innerHTML = '<span class="cell-badge" style="background:'+bg+';color:'+(isSummary?'#1d1d1f':fg)+'">'+( val ? fmtPct(val) : '')+'</span>';
                 } else if (t === 'share') {
-                    td.className = 'val-fact' + (g ? ' g-'+g : '');
-                    // badge без фіксованого кольору — його перезапише colorizeShareCols
                     td.innerHTML = '<span class="cell-badge badge-fact-'+(g||'none')+'">'+val+'</span>';
                 } else if (t === 'plan') {
-                    td.className = 'val-plan' + (g ? ' g-'+g : '');
                     const planTxt = isTime ? val : fmtInt(val);
                     td.innerHTML = isTime ? planTxt : '<span class="cell-badge badge-plan">'+planTxt+'</span>';
                 } else {
-                    td.className = 'val-fact' + (g ? ' g-'+g : '');
                     const factTxt = (!isTime && val && !val.includes('%')) ? fmtInt(val) : val;
                     td.innerHTML = isTime ? factTxt : '<span class="cell-badge badge-fact-'+(g||'none')+'">'+factTxt+'</span>';
                 }
@@ -417,8 +456,8 @@ async function load() {
             tbody.appendChild(tr);
         }
 
-        // ===== ДИНАМІЧНА ЗАЛИВКА =====
         colorizeShareCols(headers);
+        applySnapToGroupStarts();
 
     } catch(e) {
         const el = document.getElementById('loader');
