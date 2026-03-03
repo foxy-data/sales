@@ -452,85 +452,89 @@
         }
 
         /* --- ТАБЛИЦЯ З GOOGLE SHEETS --- */
+        /* --- КОМПАКТНА ТАБЛИЦЯ З GOOGLE SHEETS --- */
         .gsheet-block {
             background: var(--color-card-bg);
-            border-radius: 22px;
+            border-radius: 18px;
             border: 1px solid var(--color-border);
             box-shadow: var(--shadow-md);
-            margin-bottom: 30px;
+            margin-bottom: 24px;
             overflow: hidden;
+            /* висота: 48px nav + 40px container padding + 60px header + кілька px запасу */
+            max-height: calc(100dvh - 48px - 40px - 60px - 24px);
+            display: flex;
+            flex-direction: column;
         }
 
         .gsheet-block-header {
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 20px;
+            padding: 9px 14px;
             border-bottom: 1px solid var(--color-border);
             background: #f5f5f7;
-            border-radius: 22px 22px 0 0;
+            border-radius: 18px 18px 0 0;
         }
 
         .gsheet-block-title {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 15px;
+            gap: 7px;
+            font-size: 13px;
             font-weight: 600;
             color: var(--color-text);
         }
 
-        .gsheet-block-title span.icon {
-            font-size: 20px;
-        }
+        .gsheet-block-title span.icon { font-size: 15px; }
 
         .gsheet-refresh-btn {
             background: none;
             border: 1px solid var(--color-border);
-            border-radius: 10px;
-            padding: 6px 12px;
-            font-size: 12px;
+            border-radius: 8px;
+            padding: 4px 9px;
+            font-size: 11px;
             font-weight: 500;
             color: var(--color-text-secondary);
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
+            line-height: 1.4;
         }
 
         .gsheet-refresh-btn:hover {
-            background: var(--color-bg);
             color: var(--color-accent);
             border-color: var(--color-accent);
         }
 
         .gsheet-table-wrapper {
             overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            max-height: 340px;
             overflow-y: auto;
+            flex: 1 1 auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        .gsheet-table-wrapper::-webkit-scrollbar { height: 5px; width: 5px; }
-        .gsheet-table-wrapper::-webkit-scrollbar-track { background: #f5f5f7; }
+        .gsheet-table-wrapper::-webkit-scrollbar { height: 4px; width: 4px; }
+        .gsheet-table-wrapper::-webkit-scrollbar-track { background: transparent; }
         .gsheet-table-wrapper::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 10px; }
 
         .gsheet-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 11.5px;
         }
 
         .gsheet-table thead th {
             background: #f5f5f7;
-            padding: 10px 14px;
+            padding: 6px 10px;
             text-align: left;
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 10px;
+            font-weight: 700;
             text-transform: uppercase;
             color: var(--color-text-secondary);
-            letter-spacing: 0.03em;
+            letter-spacing: 0.04em;
             white-space: nowrap;
             position: sticky;
             top: 0;
@@ -538,62 +542,76 @@
             border-bottom: 1px solid var(--color-border);
         }
 
-        .gsheet-table tbody tr {
-            border-bottom: 1px solid #f0f0f5;
-            transition: background 0.15s;
-        }
-
-        .gsheet-table tbody tr:last-child {
-            border-bottom: none;
-        }
-
-        .gsheet-table tbody tr:hover {
-            background: #f9f9fb;
-        }
+        .gsheet-table tbody tr { border-bottom: 1px solid rgba(0,0,0,0.04); }
+        .gsheet-table tbody tr:last-child { border-bottom: none; }
 
         .gsheet-table tbody td {
-            padding: 10px 14px;
-            color: var(--color-text);
+            padding: 5px 10px;
             white-space: nowrap;
             vertical-align: middle;
+            font-size: 11.5px;
+            line-height: 1.3;
         }
 
+        /* Перша колонка — назва групи — жирна */
+        .gsheet-table tbody td:first-child {
+            font-weight: 600;
+        }
+
+        /* Кольори рядків по ключових словах у першій колонці */
+        .gsheet-row-acc    { background: #fff7ed; }
+        .gsheet-row-acc td:first-child { color: #c05800; }
+        .gsheet-row-acc:hover { background: #ffedd5; }
+
+        .gsheet-row-ab     { background: #fdf4ff; }
+        .gsheet-row-ab td:first-child { color: #7c3aed; }
+        .gsheet-row-ab:hover { background: #f5e8ff; }
+
+        .gsheet-row-it     { background: #f0fdf4; }
+        .gsheet-row-it td:first-child { color: #166534; }
+        .gsheet-row-it:hover { background: #dcfce7; }
+
+        .gsheet-row-sales  { background: #eff6ff; }
+        .gsheet-row-sales td:first-child { color: #1d4ed8; }
+        .gsheet-row-sales:hover { background: #dbeafe; }
+
+        .gsheet-row-service { background: #f0fdfa; }
+        .gsheet-row-service td:first-child { color: #0f766e; }
+        .gsheet-row-service:hover { background: #ccfbf1; }
+
+        .gsheet-row-uds    { background: #fff1f2; }
+        .gsheet-row-uds td:first-child { color: #be123c; }
+        .gsheet-row-uds:hover { background: #ffe4e6; }
+
+        .gsheet-row-other  { background: #ffffff; }
+        .gsheet-row-other:hover { background: #f9f9fb; }
+
         .gsheet-loading {
-            padding: 30px;
+            padding: 20px;
             text-align: center;
             color: var(--color-text-secondary);
-            font-size: 14px;
+            font-size: 13px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .gsheet-loading-spinner {
-            width: 20px;
-            height: 20px;
+            width: 16px; height: 16px;
             border: 2px solid #d2d2d7;
             border-top-color: var(--color-accent);
             border-radius: 50%;
             animation: spin 0.7s linear infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .gsheet-error {
-            padding: 20px;
+            padding: 16px;
             text-align: center;
             color: #ff3b30;
-            font-size: 13px;
-        }
-
-        @media (max-width: 600px) {
-            .gsheet-table { font-size: 12px; }
-            .gsheet-table thead th { padding: 8px 10px; }
-            .gsheet-table tbody td { padding: 8px 10px; }
-            .gsheet-block-header { padding: 12px 16px; }
+            font-size: 12px;
         }
     </style>
 </head>
@@ -754,17 +772,29 @@
             const headers = rows[0];
             const dataRows = rows.slice(1);
 
-            // Спробуємо знайти заголовок таблиці в першому рядку якщо є
             const titleEl = document.getElementById('gsheet-title');
             if (headers.length > 0 && headers[0].trim()) {
                 titleEl.textContent = headers[0].trim() || 'Дані з таблиці';
+            }
+
+            // Визначення класу кольору по першій колонці рядка
+            function rowColorClass(firstCell) {
+                const v = (firstCell || '').toLowerCase();
+                if (/\bасс\b|^acc|аксес/.test(v)) return 'gsheet-row-acc';
+                if (/\bаб\b|\bab\b|акц[иі]йн/.test(v)) return 'gsheet-row-ab';
+                if (/\bіт\b|\bit\b|інфор|техн/.test(v)) return 'gsheet-row-it';
+                if (/продаж|sales|то\b|товар/.test(v)) return 'gsheet-row-sales';
+                if (/послуг|сервіс|service/.test(v)) return 'gsheet-row-service';
+                if (/удс|uds/.test(v)) return 'gsheet-row-uds';
+                return 'gsheet-row-other';
             }
 
             let html = `<div class="gsheet-table-wrapper"><table class="gsheet-table"><thead><tr>`;
             headers.forEach(h => { html += `<th>${escapeHTML(h)}</th>`; });
             html += `</tr></thead><tbody>`;
             dataRows.forEach(row => {
-                html += `<tr>`;
+                const cls = rowColorClass(row[0]);
+                html += `<tr class="${cls}">`;
                 headers.forEach((_, i) => {
                     html += `<td>${escapeHTML(row[i] || '')}</td>`;
                 });
