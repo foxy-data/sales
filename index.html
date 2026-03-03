@@ -848,6 +848,9 @@
                     if (!name) return;
                     const num = s => parseFloat((s||'0').replace(/[\s\u00a0]/g,'').replace(',','.')) || 0;
                     planData[name] = { to: num(row[iTO]), acc: num(row[iACC]), serv: num(row[iServ]) };
+                    if (/тотал|total|загалом/i.test(name)) {
+                        planData['Показники магазину'] = planData[name];
+                    }
                 });
                 console.log('Plan loaded:', Object.keys(planData).length);
             } catch(e) { console.warn('Plan error:', e); }
@@ -868,7 +871,7 @@
         }
         function fmtRest(fact, plan) {
             const r = plan - fact;
-            return r > 0 ? '-' + formatNumber(Math.round(r)) : '✓';
+            return r > 0 ? '-' + formatFull(r) : '✓';
         }
 
         // --- ЛОГІКА ДАНИХ ТА ВІДОБРАЖЕННЯ ---
@@ -888,6 +891,10 @@
             if (num >= 1000000) return (num / 1000000).toFixed(2) + 'М';
             if (num >= 1000) return (num / 1000).toFixed(1) + 'К';
             return num;
+        }
+        function formatFull(num) {
+            if (!num && num !== 0) return '0';
+            return Math.round(num).toLocaleString('uk-UA');
         }
 
         function renderCards(data) {
@@ -1005,9 +1012,9 @@
                 '<div class="detail-plan-section">' +
                     '<div style="font-size:13px;font-weight:700;margin-bottom:4px">📊 План / Факт / Залишок</div>' +
                     '<div class="detail-plan-grid">' +
-                        '<div class="detail-plan-card"><div class="dpc-label">ТО</div><div class="dpc-plan">План: ' + formatNumber(_pl.to) + ' грн</div><div class="dpc-fact">' + formatNumber(_tF) + ' грн</div><div class="dpc-rest">Вик.: ' + (_pl.to ? Math.round(_tF/_pl.to*100) : 0) + '% &nbsp; Зал.: ' + fmtRest(_tF,_pl.to) + '</div></div>' +
-                        '<div class="detail-plan-card"><div class="dpc-label">АСС</div><div class="dpc-plan">План: ' + formatNumber(_pl.acc) + ' грн</div><div class="dpc-fact">' + formatNumber(_aF) + ' грн</div><div class="dpc-rest">Вик.: ' + (_pl.acc ? Math.round(_aF/_pl.acc*100) : 0) + '% &nbsp; Зал.: ' + fmtRest(_aF,_pl.acc) + '</div></div>' +
-                        '<div class="detail-plan-card"><div class="dpc-label">Послуги</div><div class="dpc-plan">План: ' + formatNumber(_pl.serv) + ' грн</div><div class="dpc-fact">' + formatNumber(_sF) + ' грн</div><div class="dpc-rest">Вик.: ' + (_pl.serv ? Math.round(_sF/_pl.serv*100) : 0) + '% &nbsp; Зал.: ' + fmtRest(_sF,_pl.serv) + '</div></div>' +
+                        '<div class="detail-plan-card"><div class="dpc-label">ТО</div><div class="dpc-plan">План: ' + formatFull(_pl.to) + ' грн</div><div class="dpc-fact">' + formatFull(_tF) + ' грн</div><div class="dpc-rest">Вик.: ' + (_pl.to ? Math.round(_tF/_pl.to*100) : 0) + '% &nbsp; Зал.: ' + fmtRest(_tF,_pl.to) + '</div></div>' +
+                        '<div class="detail-plan-card"><div class="dpc-label">АСС</div><div class="dpc-plan">План: ' + formatFull(_pl.acc) + ' грн</div><div class="dpc-fact">' + formatFull(_aF) + ' грн</div><div class="dpc-rest">Вик.: ' + (_pl.acc ? Math.round(_aF/_pl.acc*100) : 0) + '% &nbsp; Зал.: ' + fmtRest(_aF,_pl.acc) + '</div></div>' +
+                        '<div class="detail-plan-card"><div class="dpc-label">Послуги</div><div class="dpc-plan">План: ' + formatFull(_pl.serv) + ' грн</div><div class="dpc-fact">' + formatFull(_sF) + ' грн</div><div class="dpc-rest">Вик.: ' + (_pl.serv ? Math.round(_sF/_pl.serv*100) : 0) + '% &nbsp; Зал.: ' + fmtRest(_sF,_pl.serv) + '</div></div>' +
                     '</div>' +
                 '</div>'
             ) : '';
