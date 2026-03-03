@@ -462,6 +462,36 @@
             display: flex;
             flex-direction: column;
         }
+        /* Згорнутий стан */
+        .gsheet-block.collapsed .gsheet-body {
+            display: none;
+        }
+        .gsheet-block.collapsed {
+            border-radius: 18px;
+        }
+        .gsheet-expand-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-accent);
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-family: inherit;
+            transition: opacity 0.2s;
+        }
+        .gsheet-expand-btn:hover { opacity: 0.7; }
+        .gsheet-expand-arrow {
+            display: inline-block;
+            transition: transform 0.25s ease;
+            font-style: normal;
+        }
+        .gsheet-block:not(.collapsed) .gsheet-expand-arrow {
+            transform: rotate(180deg);
+        }
         .gsheet-block-header {
             flex-shrink: 0;
             display: flex;
@@ -582,18 +612,26 @@
                 <p>Статистика та графіки департаменту</p>
             </header>
             <!-- ТАБЛИЦЯ З GOOGLE SHEETS -->
-            <div class="gsheet-block" id="gsheet-block">
+            <div class="gsheet-block collapsed" id="gsheet-block">
                 <div class="gsheet-block-header">
                     <div class="gsheet-block-title">
                         <span>📋</span>
                         <span id="gsheet-title">Умови продажу</span>
                     </div>
-                    <button class="gsheet-refresh-btn" onclick="loadGSheet()">↻ Оновити</button>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <button class="gsheet-refresh-btn" onclick="loadGSheet()">↻ Оновити</button>
+                        <button class="gsheet-expand-btn" onclick="toggleGSheet()">
+                            <span id="gsheet-expand-label">Розгорнути</span>
+                            <i class="gsheet-expand-arrow">▼</i>
+                        </button>
+                    </div>
                 </div>
-                <div id="gsheet-content">
-                    <div class="gsheet-loading">
-                        <div class="gsheet-loading-spinner"></div>
-                        Завантаження...
+                <div class="gsheet-body">
+                    <div id="gsheet-content">
+                        <div class="gsheet-loading">
+                            <div class="gsheet-loading-spinner"></div>
+                            Завантаження...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -661,6 +699,19 @@
 
         // --- GOOGLE SHEETS ТАБЛИЦЯ ---
         const GSHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTd9BXXff9qHAx0Hp0MEgb-rzsHOgsnBUoqus8vf5zSCzmDfNbe0Js9pcY_2YMkZT6lLZp7vmTEbwM6/pub?output=csv';
+
+        function toggleGSheet() {
+            const block = document.getElementById('gsheet-block');
+            const label = document.getElementById('gsheet-expand-label');
+            const isCollapsed = block.classList.contains('collapsed');
+            if (isCollapsed) {
+                block.classList.remove('collapsed');
+                label.textContent = 'Згорнути';
+            } else {
+                block.classList.add('collapsed');
+                label.textContent = 'Розгорнути';
+            }
+        }
 
         async function loadGSheet() {
             const content = document.getElementById('gsheet-content');
