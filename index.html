@@ -459,7 +459,6 @@
             box-shadow: var(--shadow-md);
             margin-bottom: 24px;
             overflow: hidden;
-            max-height: calc(100dvh - 160px);
             display: flex;
             flex-direction: column;
         }
@@ -486,7 +485,7 @@
         }
         .gsheet-refresh-btn:hover { color: var(--color-accent); border-color: var(--color-accent); }
         .gsheet-table-wrapper {
-            overflow-x: hidden; overflow-y: auto; flex: 1 1 auto;
+            overflow-x: hidden; overflow-y: visible;
             -webkit-overflow-scrolling: touch;
         }
         .gsheet-table-wrapper::-webkit-scrollbar { height: 4px; width: 4px; }
@@ -726,7 +725,7 @@
                 const isGroup = i === 0;
                 const isSeller = i === sellerIdx;
                 if (isGroup) colgroup += '<col style="width:52px;min-width:52px">';
-                else if (isSeller) colgroup += '<col style="width:105px;min-width:105px">';
+                else if (isSeller) colgroup += '<col style="width:130px;min-width:130px">';
                 else colgroup += '<col>';
             });
             colgroup += '</colgroup>';
