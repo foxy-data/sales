@@ -146,21 +146,30 @@
         /* РІЗНІ КОЛЬОРИ ДЛЯ ПЛАН, ФАКТ, % */
         .val-plan { color: #86868b; font-size: 11px; background: transparent; }
         .val-fact { font-weight: 600; background: transparent; color: #1d1d1f; }
+        /* === ПЛАН badge — колір рядка, напівпрозорий === */
         .plan-badge {
             display: inline-block; padding: 2px 7px; border-radius: 7px;
-            font-size: 11px; font-weight: 500; color: #6e6e73;
-            background: rgba(134,134,139,0.1); white-space: nowrap;
+            font-size: 11px; font-weight: 500; white-space: nowrap;
         }
+        .group-to    .plan-badge { background: rgba(52,199,89,0.09);   color: #3a9e5f; }
+        .group-serv  .plan-badge { background: rgba(175,82,222,0.09);  color: #8e44ad; }
+        .group-acc   .plan-badge { background: rgba(255,149,0,0.09);   color: #b87000; }
+        .group-traffic .plan-badge { background: rgba(0,113,227,0.09); color: #1a6bc4; }
+        .group-other .plan-badge { background: rgba(142,142,147,0.09); color: #6e6e73; }
+
+        /* === ФАКТ badge — яскравіший колір рядка === */
         .fact-badge {
             display: inline-block; padding: 3px 8px; border-radius: 8px;
             font-size: 12px; font-weight: 600; white-space: nowrap;
         }
-        .fact-badge.group-to      { background: rgba(52,199,89,0.15);  color: #1a7f37; }
-        .fact-badge.group-serv    { background: rgba(175,82,222,0.15); color: #7c3aed; }
-        .fact-badge.group-acc     { background: rgba(255,149,0,0.15);  color: #c05800; }
-        .fact-badge.group-traffic { background: rgba(0,113,227,0.15);  color: #1d4ed8; }
-        .fact-badge.group-other   { background: rgba(142,142,147,0.1); color: #3d3d3f; }
-        tr.group-border-top td { border-top: 10px solid #f0f0f5 !important; padding-top: 12px !important; }
+        .group-to    .fact-badge { background: rgba(52,199,89,0.18);   color: #1a7f37; }
+        .group-serv  .fact-badge { background: rgba(175,82,222,0.18);  color: #6d28d9; }
+        .group-acc   .fact-badge { background: rgba(255,149,0,0.18);   color: #c05800; }
+        .group-traffic .fact-badge { background: rgba(0,113,227,0.18); color: #1d4ed8; }
+        .group-other .fact-badge { background: rgba(142,142,147,0.12); color: #3d3d3f; }
+
+        /* === Роздільник між групами — тонка лінія === */
+        tr.group-border-top td { border-top: 1px solid #e0e0e5 !important; padding-top: 10px !important; }
         .val-pct, .val-pct-success, .val-pct-danger {
             font-weight: 700;
             text-align: right;
@@ -380,6 +389,7 @@
                 document.getElementById('dataTable').style.display = 'table';
                 const tbody = document.getElementById('tableBody');
                 tbody.innerHTML = '';
+                let prevGroupClass = null;
 
                 dataRows.forEach(row => {
                     if (!row[0] || !row[0].trim()) return;
@@ -392,10 +402,14 @@
                     // Визначаємо групу рядка за назвою метрики
                     const rowGroupClass = getRowGroupClass(row[0]);
                     
+                    // Роздільник при зміні групи
+                    const isGroupChange = prevGroupClass !== null && rowGroupClass !== prevGroupClass && !isTotal;
+                    if (!isTotal) prevGroupClass = rowGroupClass;
+                    
                     if (isTotal) {
                         tr.className = 'total-row';
                     } else {
-                        tr.className = rowGroupClass;
+                        tr.className = rowGroupClass + (isGroupChange ? ' group-border-top' : '');
                     }
 
                     // Перша колонка - ім'я
@@ -412,14 +426,14 @@
                         
                         // План
                         const planCell = document.createElement('td');
-                        planCell.className = 'val-plan ' + groupClass;
+                        planCell.className = 'val-plan ' + rowGroupClass;
                         planCell.innerHTML = '<span class="plan-badge">' + formatDisplay(row[startIdx] || 0) + '</span>';
                         tr.appendChild(planCell);
                         
                         // Факт
                         const factCell = document.createElement('td');
-                        factCell.className = 'val-fact ' + groupClass;
-                        factCell.innerHTML = '<span class="fact-badge ' + groupClass + '">' + formatDisplay(row[startIdx + 1] || 0) + '</span>';
+                        factCell.className = 'val-fact ' + rowGroupClass;
+                        factCell.innerHTML = '<span class="fact-badge">' + formatDisplay(row[startIdx + 1] || 0) + '</span>';
                         tr.appendChild(factCell);
                         
                         // %
