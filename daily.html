@@ -27,7 +27,6 @@
         }
         h1 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
 
-        /* === ОДНА ТАБЛИЦЯ, overflow-x на table-card — як в plan-fact === */
         .table-card {
             background: white;
             border-radius: 16px;
@@ -44,7 +43,6 @@
             table-layout: fixed;
         }
 
-        /* === ГРУПОВІ ЗАГОЛОВКИ === */
         th.group-header {
             text-align: center;
             font-size: 10px;
@@ -89,10 +87,8 @@
             text-overflow: ellipsis;
         }
 
-        /* Роздільник між групами */
         .grp-start { border-left: 2px solid #d2d2d7 !important; }
 
-        /* === STICKY ПЕРША КОЛОНКА — точно як plan-fact === */
         .name-cell, th:first-child {
             position: sticky;
             left: 0;
@@ -110,7 +106,6 @@
         }
         th:first-child { z-index: 11; }
 
-        /* === BADGE СТИЛЬ === */
         .val-plan, .val-fact, .val-pct { padding: 2px 4px !important; }
         .cell-badge {
             display: block; border-radius: 7px; font-size: 11px; font-weight: 600;
@@ -124,7 +119,6 @@
         .badge-fact-checks       { background: rgba(175,82,222,0.12);  color: #6d28d9; }
         .badge-fact-none         { background: rgba(134,134,139,0.08); color: #3d3d3f; }
 
-        /* === СПЕЦІАЛЬНІ РЯДКИ === */
         .time-row td           { background: #f5f5f7 !important; font-weight: 700; color: #333; }
         .time-row td.name-cell { background: #f5f5f7 !important; }
         .summary-row td           { background: #eaf1fe !important; font-weight: 700; color: #1d1d1f !important; }
@@ -133,7 +127,6 @@
         .loading { padding: 40px; text-align: center; color: #86868b; }
         .error   { padding: 40px; text-align: center; color: #ff3b30; }
 
-        /* === МОБІЛЬНА — точно як plan-fact === */
         @media (max-width: 767px) {
             .table-card {
                 scroll-snap-type: x proximity;
@@ -171,8 +164,6 @@
                 padding: 5px 4px;
             }
 
-            /* Snap точки — nth-child відповідає першій колонці кожної групи */
-            /* scroll-padding-left на контейнері враховує sticky name-cell */
             th:nth-child(2), td:nth-child(2) { scroll-snap-align: start; }
             th:nth-child(5), td:nth-child(5) { scroll-snap-align: start; }
             th:nth-child(8), td:nth-child(8) { scroll-snap-align: start; }
@@ -263,7 +254,6 @@ function pctBg(v) {
 function buildThead(headers) {
     const thead = document.getElementById('thead');
 
-    // Збираємо групи
     const groups = [];
     let cur = null;
     for (let i = 1; i < headers.length; i++) {
@@ -272,7 +262,6 @@ function buildThead(headers) {
         else cur.count++;
     }
 
-    // Рядок 1: групові заголовки
     const tr1 = document.createElement('tr');
     const corner = document.createElement('th');
     corner.rowSpan = 2;
@@ -287,7 +276,6 @@ function buildThead(headers) {
     }
     thead.appendChild(tr1);
 
-    // Рядок 2: підзаголовки
     const tr2 = document.createElement('tr');
     let prevG = '';
     for (let i = 1; i < headers.length; i++) {
@@ -304,6 +292,52 @@ function buildThead(headers) {
     thead.appendChild(tr2);
 }
 
+// ===== ДИНАМІЧНА ЗАЛИВКА "ДОЛЯ" КОЛОНОК =====
+function colorizeShareCols(headers) {
+    const tbody = document.getElementById('tbody');
+    if (!tbody) return;
+
+    // Знаходимо індекси колонок з типом 'share' (Доля послуг, Доля ACC тощо)
+    const shareColIndexes = [];
+    for (let i = 1; i < headers.length; i++) {
+        const { t } = colInfo(headers[i]);
+        if (t === 'share') shareColIndexes.push(i); // i = індекс td у рядку
+    }
+    if (!shareColIndexes.length) return;
+
+    shareColIndexes.forEach(colIdx => {
+        const cells = [];
+        const rows = tbody.querySelectorAll('tr:not(.time-row):not(.summary-row)');
+
+        rows.forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            const td = tds[colIdx];
+            if (!td) return;
+            const badge = td.querySelector('.cell-badge');
+            const raw = badge ? badge.textContent.trim() : td.textContent.trim();
+            const num = parseFloat(raw.replace('%','').replace(/\s/g,'').replace(',','.')) || 0;
+            cells.push({ badge, num });
+        });
+
+        if (!cells.length) return;
+
+        const values = cells.map(c => c.num);
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = max - min || 1;
+
+        cells.forEach(({ badge, num }) => {
+            if (!badge) return;
+            const ratio = (num - min) / range; // 0 = мін → червоне, 1 = макс → зелене
+            const hue = Math.round(ratio * 120);        // 0° червоний → 120° зелений
+            const lightness = Math.round(88 - ratio * 10); // 88% → 78%
+            const textL    = Math.round(28 + ratio * 10);  // 28% → 38%
+            badge.style.background = `hsl(${hue}, 70%, ${lightness}%)`;
+            badge.style.color      = `hsl(${hue}, 60%, ${textL}%)`;
+        });
+    });
+}
+
 // ===== ЗАВАНТАЖЕННЯ =====
 async function load() {
     const SHEET = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQOxz-ozH9yNLW3IAzlkMlbRqOTrR4sIUO1__KpAMBFEvvpMXr4LWTnRvzYGb_y6za7WBxOUhl2DV84/pub?output=csv";
@@ -317,16 +351,15 @@ async function load() {
         document.getElementById('loader').style.display = 'none';
         document.getElementById('tbl').style.display = '';
 
-        // Ширини колонок через colgroup
         const cg = document.getElementById('cg');
         cg.innerHTML = '';
         const mkCol = w => { const col = document.createElement('col'); col.style.width = w; return col; };
-        cg.appendChild(mkCol('20%')); // name
+        cg.appendChild(mkCol('20%'));
         for (let i = 1; i < headers.length; i++) {
             const {t} = colInfo(headers[i]);
             if (t === 'plan') cg.appendChild(mkCol('10%'));
             else if (t === 'pct') cg.appendChild(mkCol('14%'));
-            else cg.appendChild(mkCol('18%')); // fact
+            else cg.appendChild(mkCol('18%'));
         }
 
         buildThead(headers);
@@ -368,6 +401,7 @@ async function load() {
                     td.innerHTML = '<span class="cell-badge" style="background:'+bg+';color:'+(isSummary?'#1d1d1f':fg)+'">'+pctTxt+'</span>';
                 } else if (t === 'share') {
                     td.className = 'val-fact' + (g ? ' g-'+g : '');
+                    // badge без фіксованого кольору — його перезапише colorizeShareCols
                     td.innerHTML = '<span class="cell-badge badge-fact-'+(g||'none')+'">'+val+'</span>';
                 } else if (t === 'plan') {
                     td.className = 'val-plan' + (g ? ' g-'+g : '');
@@ -382,6 +416,10 @@ async function load() {
             }
             tbody.appendChild(tr);
         }
+
+        // ===== ДИНАМІЧНА ЗАЛИВКА =====
+        colorizeShareCols(headers);
+
     } catch(e) {
         const el = document.getElementById('loader');
         el.className = 'error';
