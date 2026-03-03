@@ -110,15 +110,19 @@
         }
         th:first-child { z-index: 11; }
 
-        /* === ЗНАЧЕННЯ === */
-        .val-plan   { color: #aaa; font-size: 10px; }
-        .val-fact   { font-weight: 600; }
-        .val-pct    { font-weight: 700; }
-
-        .val-fact.g-to,     .val-pct.g-to     { color: #0071e3; }
-        .val-fact.g-serv,   .val-pct.g-serv   { color: #34c759; }
-        .val-fact.g-acc,    .val-pct.g-acc    { color: #ff9500; }
-        .val-fact.g-checks, .val-pct.g-checks { color: #af52de; }
+        /* === BADGE СТИЛЬ === */
+        .val-plan, .val-fact, .val-pct { padding: 2px 4px !important; }
+        .cell-badge {
+            display: block; border-radius: 7px; font-size: 11px; font-weight: 600;
+            text-align: center; padding: 2px 4px; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .badge-plan              { background: rgba(134,134,139,0.10); color: #6e6e73; font-weight: 500; font-size: 10px; }
+        .badge-fact-to           { background: rgba(0,113,227,0.12);   color: #1a50b8; }
+        .badge-fact-serv         { background: rgba(52,199,89,0.12);   color: #1a7f37; }
+        .badge-fact-acc          { background: rgba(255,149,0,0.12);   color: #b85000; }
+        .badge-fact-checks       { background: rgba(175,82,222,0.12);  color: #6d28d9; }
+        .badge-fact-none         { background: rgba(134,134,139,0.08); color: #3d3d3f; }
 
         /* === СПЕЦІАЛЬНІ РЯДКИ === */
         .time-row td           { background: #f5f5f7 !important; font-weight: 700; color: #333; }
@@ -186,6 +190,7 @@
     <div class="table-card">
         <div id="loader" class="loading">Завантаження...</div>
         <table id="tbl" style="display:none">
+            <colgroup id="cg"></colgroup>
             <thead id="thead"></thead>
             <tbody id="tbody"></tbody>
         </table>
@@ -312,6 +317,18 @@ async function load() {
         document.getElementById('loader').style.display = 'none';
         document.getElementById('tbl').style.display = '';
 
+        // Ширини колонок через colgroup
+        const cg = document.getElementById('cg');
+        cg.innerHTML = '';
+        const mkCol = w => { const col = document.createElement('col'); col.style.width = w; return col; };
+        cg.appendChild(mkCol('20%')); // name
+        for (let i = 1; i < headers.length; i++) {
+            const {t} = colInfo(headers[i]);
+            if (t === 'plan') cg.appendChild(mkCol('10%'));
+            else if (t === 'pct') cg.appendChild(mkCol('14%'));
+            else cg.appendChild(mkCol('18%')); // fact
+        }
+
         buildThead(headers);
 
         const tbody = document.getElementById('tbody');
@@ -347,18 +364,19 @@ async function load() {
                     const { bg, fg } = pctBg(val);
                     td.className = 'val-pct' + (g ? ' g-'+g : '');
                     if (isStart && g) td.classList.add('grp-start');
-                    td.style.background = bg;
-                    td.style.color = isSummary ? '#1d1d1f' : fg;
-                    td.textContent = val ? fmtPct(val) : '';
+                    const pctTxt = val ? fmtPct(val) : '';
+                    td.innerHTML = '<span class="cell-badge" style="background:'+bg+';color:'+(isSummary?'#1d1d1f':fg)+'">'+pctTxt+'</span>';
                 } else if (t === 'share') {
                     td.className = 'val-fact' + (g ? ' g-'+g : '');
-                    td.textContent = val;
+                    td.innerHTML = '<span class="cell-badge badge-fact-'+(g||'none')+'">'+val+'</span>';
                 } else if (t === 'plan') {
                     td.className = 'val-plan' + (g ? ' g-'+g : '');
-                    td.textContent = isTime ? val : fmtInt(val);
+                    const planTxt = isTime ? val : fmtInt(val);
+                    td.innerHTML = isTime ? planTxt : '<span class="cell-badge badge-plan">'+planTxt+'</span>';
                 } else {
                     td.className = 'val-fact' + (g ? ' g-'+g : '');
-                    td.textContent = (!isTime && val && !val.includes('%')) ? fmtInt(val) : val;
+                    const factTxt = (!isTime && val && !val.includes('%')) ? fmtInt(val) : val;
+                    td.innerHTML = isTime ? factTxt : '<span class="cell-badge badge-fact-'+(g||'none')+'">'+factTxt+'</span>';
                 }
                 tr.appendChild(td);
             }
