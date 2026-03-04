@@ -6,332 +6,314 @@
     <title>План-Факт — Детальна Аналітика</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <style>
-        :root { --bg: #f5f5f7; --text: #1d1d1f; --accent: #0071e3; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
-        .container { max-width: 100%; margin: 10px auto; }
-        .back-link { color: var(--accent); text-decoration: none; font-weight: 500; display: inline-block; margin-bottom: 15px; font-size: 14px; }
-        
-        .table-card { 
-            background: white; 
-            border-radius: 18px; 
-            box-shadow: 0 8px 30px rgba(0,0,0,0.04); 
+        :root {
+            --bg: #f5f5f7; --text: #1d1d1f; --accent: #0071e3;
+            --mob-name: 82px;
+            /* ТО: 3 колонки на екран; решта груп: 4 колонки */
+            --mob-col-3: calc((100vw - var(--mob-name)) / 3);
+            --mob-col-4: calc((100vw - var(--mob-name)) / 4);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 8px 10px; }
+
+        .back-link { color: var(--accent); text-decoration: none; font-weight: 500; display: inline-block; margin-bottom: 8px; font-size: 14px; }
+
+        .table-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-x: contain;
+            scroll-snap-type: x mandatory;
         }
 
-        table { width: 100%; border-collapse: collapse; min-width: 1400px; table-layout: fixed; }
-        
-        .group-header { text-align: center; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px; color: #1d1d1f; border-bottom: 1px solid #d2d2d7; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
-        th { text-align: left; padding: 10px; color: #86868b; font-size: 10px; font-weight: 600; border-bottom: 1px solid #d2d2d7; background: white; }
-        td { padding: 12px 10px; border-bottom: 1px solid #f5f5f7; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
+        /* ===== ГРУПОВІ ЗАГОЛОВКИ ===== */
+        .group-header {
+            text-align: center; font-size: 10px; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            padding: 7px 4px; border-bottom: 1px solid #d2d2d7; background: white;
+        }
+        .group-to     { color: #0071e3; border-bottom: 3px solid #0071e3 !important; }
+        .group-serv   { color: #34c759; border-bottom: 3px solid #34c759 !important; }
+        .group-acc    { color: #ff9500; border-bottom: 3px solid #ff9500 !important; }
+        .group-checks { color: #af52de; border-bottom: 3px solid #af52de !important; }
+
+        th {
+            text-align: center; padding: 5px 4px; color: #86868b;
+            font-size: 10px; font-weight: 600; text-transform: uppercase;
+            border-bottom: 1px solid #d2d2d7; background: white;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        th.group-to     { color: #0071e3; }
+        th.group-serv   { color: #34c759; }
+        th.group-acc    { color: #ff9500; }
+        th.group-checks { color: #af52de; }
+
+        td {
+            padding: 5px 4px; border-bottom: 1px solid #f2f2f4;
+            font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            text-align: center;
+        }
+
         .group-start { border-left: 2px solid #d2d2d7 !important; }
-        
-        .group-header.group-to    { color: #0071e3; border-bottom: 3px solid #0071e3; }
-        .group-header.group-serv  { color: #34c759; border-bottom: 3px solid #34c759; }
-        .group-header.group-acc   { color: #ff9500; border-bottom: 3px solid #ff9500; }
-        .group-header.group-checks{ color: #af52de; border-bottom: 3px solid #af52de; }
-        
-        th.group-serv:first-of-type, th.group-acc:first-of-type, th.group-checks:first-of-type { border-left: 2px solid #d2d2d7; }
 
-        .name-cell, th:first-child { 
-            position: sticky; left: 0; 
-            background: white; 
-            z-index: 10; 
-            width: 90px; min-width: 90px; max-width: 90px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-            font-weight: 600; font-size: 11px;
-            white-space: normal; line-height: 1.2;
-            padding: 8px 5px;
+        /* ===== STICKY ім'я ===== */
+        .name-cell, th:first-child {
+            position: sticky; left: 0; background: white; z-index: 100;
+            font-weight: 600; font-size: 11px; white-space: normal;
+            line-height: 1.2; word-break: break-word; text-align: left;
+            box-shadow: 4px 0 8px -2px rgba(0,0,0,0.10);
         }
-        th:first-child { z-index: 11; }
+        th:first-child { z-index: 101; }
 
-        .val-plan { color: #86868b; font-size: 11px; }
-        .val-fact { font-weight: 600; color: #1d1d1f; }
-        .val-pct  { font-weight: 700; text-align: right; min-width: 65px; }
+        /* ===== БЕЙДЖІ ===== */
+        .cell-badge {
+            display: block; border-radius: 6px; font-size: 11px; font-weight: 600;
+            text-align: center; padding: 2px 4px; white-space: nowrap;
+        }
+        .badge-plan   { background: rgba(134,134,139,0.10); color: #6e6e73; font-weight: 500; font-size: 10px; }
+        .badge-to     { background: rgba(0,113,227,0.12);   color: #1a50b8; }
+        .badge-serv   { background: rgba(52,199,89,0.12);   color: #1a7f37; }
+        .badge-acc    { background: rgba(255,149,0,0.12);   color: #b85000; }
+        .badge-checks { background: rgba(175,82,222,0.12);  color: #6d28d9; }
 
-        .val-fact.group-to,    .val-pct.group-to    { color: #0071e3; }
-        .val-fact.group-serv,  .val-pct.group-serv  { color: #34c759; }
-        .val-fact.group-acc,   .val-pct.group-acc   { color: #ff9500; }
-        .val-fact.group-checks,.val-pct.group-checks{ color: #af52de; }
-        
-        .total-row { 
-            background: #e8f0fe !important;
-            border-top: 2px solid #a8c4f0 !important;
-            border-bottom: 2px solid #a8c4f0 !important;
-        }
-        .total-row td { font-weight: 700 !important; background: #e8f0fe !important; }
-        .total-row .name-cell { 
-            background: #e8f0fe !important; 
-            color: #1d1d1f !important;
-            font-size: 13px !important;
-            letter-spacing: 0.5px !important;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.08) !important;
-        }
-        .total-row .val-plan { color: #86868b !important; }
-        .total-row .val-fact, .total-row .val-pct { color: #1d1d1f !important; }
-        .total-row .group-start { border-left-color: #a8c4f0 !important; }
-        
-        .deviation-row td {
-            font-style: italic !important;
-            color: #86868b !important;
-            font-size: 12px !important;
-        }
-        .deviation-row .name-cell {
-            font-style: italic !important;
-            color: #86868b !important;
-        }
+        /* ===== ПІДСУМКОВИЙ РЯДОК ===== */
+        .total-row td           { background: #e8f0fe !important; font-weight: 700 !important; }
+        .total-row td.name-cell { background: #e8f0fe !important; color: #1d1d1f !important; }
+        .deviation-row td       { font-style: italic; color: #86868b !important; font-size: 11px !important; }
+        .deviation-row .name-cell { font-style: italic; color: #86868b !important; }
 
         .loading { padding: 40px; text-align: center; color: #86868b; }
+        .error   { padding: 40px; text-align: center; color: #ff3b30; }
 
-        /* Мобільна версія */
-        @media (max-width: 960px) {
-            .table-card {
-                scroll-snap-type: x proximity;
-                scroll-behavior: smooth;
-                scroll-padding-left: 75px;
-                -webkit-overflow-scrolling: touch;
-                overscroll-behavior-x: contain;
-            }
-            
-            table {
-                min-width: 1000px;
-            }
-            
-            .name-cell, th:first-child {
-                width: 75px;
-                min-width: 75px;
-                max-width: 75px;
-                font-size: 9.5px;
-                padding: 6px 4px 6px 6px;
-                z-index: 20 !important;
-                background: white;
-                background-clip: padding-box;
-                box-shadow: 4px 0 10px -2px rgba(0,0,0,0.14);
-                border-right: 1px solid #e0e0e5;
-            }
-            
-            th:first-child {
-                z-index: 21 !important;
-            }
-            
-            td:not(.name-cell), th:not(:first-child) {
-                position: relative;
-                z-index: 1;
-            }
-            
-            th, td {
-                min-width: 80px;
-                max-width: 95px;
-                font-size: 10.5px;
-                padding: 6px 5px;
-            }
-            
-            /* Snap точки */
-            th:nth-child(2), td:nth-child(2) {
-                scroll-snap-align: start;
-                scroll-margin-left: 75px;
-            }
-            
-            th:nth-child(5), td:nth-child(5) {
-                scroll-snap-align: start;
-                scroll-margin-left: 75px;
-                border-left: 2px solid #e8e8ed;
-            }
-            
-            th:nth-child(9), td:nth-child(9) {
-                scroll-snap-align: start;
-                scroll-margin-left: 75px;
-                border-left: 2px solid #e8e8ed;
-            }
-            
-            th:nth-child(13), td:nth-child(13) {
-                scroll-snap-align: start;
-                scroll-margin-left: 75px;
-                border-left: 2px solid #e8e8ed;
-            }
-
-            td, th {
-                scroll-snap-stop: normal;
-            }
+        /* ===== ДЕСКТОП ===== */
+        @media (min-width: 768px) {
+            table { min-width: 1200px; }
+            .name-cell, th:first-child { width: 100px; min-width: 100px; max-width: 100px; padding: 6px 6px; }
+            .col-name  { width: 100px; }
+            .col-plan  { width: 80px; }
+            .col-fact  { width: 90px; }
+            .col-pct   { width: 72px; }
+            .col-share { width: 72px; }
+            td { font-size: 12px; padding: 6px 5px; }
+            th { font-size: 10px; padding: 6px 5px; }
+            .cell-badge { font-size: 11px; padding: 2px 5px; }
         }
 
-        .mobile-hint {
-            display: none;
-            font-size: 12px;
-            color: #86868b;
-            text-align: center;
-            margin: 8px 0 12px;
-            padding: 0 10px;
+        /* ===== МОБІЛЬНИЙ ===== */
+        @media (max-width: 767px) {
+            .table-card { scroll-padding-left: var(--mob-name); }
+
+            table { min-width: calc(var(--mob-name) + var(--mob-col-3) * 3 + var(--mob-col-4) * 11); }
+
+            .name-cell, th:first-child {
+                width: var(--mob-name); min-width: var(--mob-name); max-width: var(--mob-name);
+                font-size: 9px; padding: 4px 4px;
+                z-index: 200 !important;
+                background: white; background-clip: padding-box;
+                box-shadow: 4px 0 10px -2px rgba(0,0,0,0.18);
+                border-right: 1px solid #e0e0e5;
+            }
+            th:first-child { z-index: 201 !important; }
+
+            /* ТО — 3 колонки на екран */
+            .col-to-plan, .col-to-fact, .col-to-pct {
+                width: var(--mob-col-3); min-width: var(--mob-col-3); max-width: var(--mob-col-3);
+            }
+            /* Послуги, АСС, Чеки — 4 колонки на екран */
+            .col-serv-plan, .col-serv-fact, .col-serv-share, .col-serv-pct,
+            .col-acc-plan,  .col-acc-fact,  .col-acc-share,  .col-acc-pct,
+            .col-chk-plan,  .col-chk-fact,  .col-chk-pct {
+                width: var(--mob-col-4); min-width: var(--mob-col-4); max-width: var(--mob-col-4);
+            }
+
+            td { font-size: 10.5px; padding: 4px 2px; }
+            th { font-size: 8px; padding: 4px 2px; }
+            th.group-header { font-size: 8.5px; padding: 5px 2px; }
+            .cell-badge { font-size: 10px; padding: 2px 2px; border-radius: 5px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <a href="index.html" class="back-link">← На головну</a>
+    <a href="index.html" class="back-link">← На головну</a>
 
-        <div class="mobile-hint">
-            Свайпніть вліво → перегляд груп: Товарообіг · Послуги · Аксесуари · Чеки
-        </div>
+    <div class="table-card">
+        <div id="loader" class="loading">Завантаження даних...</div>
+        <table id="tbl" style="display:none">
+            <thead>
+                <tr>
+                    <th rowspan="2" class="name-cell" style="text-align:left">ПК</th>
+                    <th colspan="3" class="group-header group-to">Товарообіг</th>
+                    <th colspan="4" class="group-header group-serv">Послуги</th>
+                    <th colspan="4" class="group-header group-acc">Аксесуари</th>
+                    <th colspan="3" class="group-header group-checks">Чеки</th>
+                </tr>
+                <tr>
+                    <th class="group-to   col-to-plan  group-start">План</th>
+                    <th class="group-to   col-to-fact">Факт</th>
+                    <th class="group-to   col-to-pct">%</th>
 
-        <div class="table-card">
-            <div id="loader" class="loading">Завантаження даних...</div>
-            <table id="dataTable" style="display: none;">
-                <thead>
-                    <tr>
-                        <th rowspan="2">ПК</th>
-                        <th colspan="3" class="group-header group-to">Товарообіг</th>
-                        <th colspan="4" class="group-header group-serv">Послуги</th>
-                        <th colspan="4" class="group-header group-acc">Аксесуари</th>
-                        <th colspan="3" class="group-header group-checks">Чеки</th>
-                    </tr>
-                    <tr>
-                        <th class="group-to">План</th><th class="group-to">Факт</th><th class="group-to">%</th>
-                        <th class="group-serv">План</th><th class="group-serv">Факт</th><th class="group-serv">Доля</th><th class="group-serv">%</th>
-                        <th class="group-acc">План</th><th class="group-acc">Факт</th><th class="group-acc">Доля</th><th class="group-acc">%</th>
-                        <th class="group-checks">План</th><th class="group-checks">Факт</th><th class="group-checks">%</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
+                    <th class="group-serv col-serv-plan group-start">План</th>
+                    <th class="group-serv col-serv-fact">Факт</th>
+                    <th class="group-serv col-serv-share">Доля</th>
+                    <th class="group-serv col-serv-pct">%</th>
+
+                    <th class="group-acc  col-acc-plan  group-start">План</th>
+                    <th class="group-acc  col-acc-fact">Факт</th>
+                    <th class="group-acc  col-acc-share">Доля</th>
+                    <th class="group-acc  col-acc-pct">%</th>
+
+                    <th class="group-checks col-chk-plan group-start">План</th>
+                    <th class="group-checks col-chk-fact">Факт</th>
+                    <th class="group-checks col-chk-pct">%</th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
     </div>
 
-    <script>
-        function parseCSV(text) {
-            const rows = []; let row = []; let col = ""; let inQuotes = false;
-            for (let i = 0; i < text.length; i++) {
-                let char = text[i];
-                if (char === '"' && text[i+1] === '"') { col += '"'; i++; }
-                else if (char === '"') { inQuotes = !inQuotes; }
-                else if (char === ',' && !inQuotes) { row.push(col); col = ""; }
-                else if (char === '\n' && !inQuotes) { row.push(col); rows.push(row); row = []; col = ""; }
-                else { col += char; }
+<script>
+function parseCSV(text) {
+    const rows = []; let row = []; let col = ""; let inQ = false;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (c === '"' && text[i+1] === '"') { col += '"'; i++; }
+        else if (c === '"') { inQ = !inQ; }
+        else if (c === ',' && !inQ) { row.push(col); col = ""; }
+        else if (c === '\n' && !inQ) { row.push(col); rows.push(row); row = []; col = ""; }
+        else col += c;
+    }
+    if (col || row.length) { row.push(col); rows.push(row); }
+    return rows;
+}
+
+function toNum(v) {
+    if (!v) return 0;
+    return parseFloat(v.toString().replace('%','').replace(/\s/g,'').replace(',','.')) || 0;
+}
+function fmtInt(v) {
+    const n = toNum(v);
+    return n ? Math.round(n).toLocaleString('uk-UA') : (v || '0');
+}
+function fmtShare(v) {
+    return toNum(v).toFixed(2);
+}
+function fmtPct(v) {
+    let n = toNum(v);
+    if (!v.toString().includes('%') && n > 0 && n < 2) n *= 100;
+    return n.toFixed(1) + '%';
+}
+function pctStyle(v) {
+    let n = toNum(v);
+    if (!v.toString().includes('%') && n > 0 && n < 2) n *= 100;
+    if (n <= 0)  return { bg:'rgba(255,59,48,0.13)',  fg:'#c0392b' };
+    if (n < 50)  return { bg:'rgba(255,59,48,0.10)',  fg:'#d63b2a' };
+    if (n < 80)  return { bg:'rgba(255,149,0,0.12)',  fg:'#b86e00' };
+    if (n < 100) return { bg:'rgba(255,204,0,0.13)',  fg:'#8a6800' };
+    if (n < 120) return { bg:'rgba(52,199,89,0.12)',  fg:'#1e7e34' };
+    return             { bg:'rgba(52,199,89,0.20)',  fg:'#155724' };
+}
+
+function badge(text, cls) {
+    return `<span class="cell-badge ${cls}">${text}</span>`;
+}
+function pctBadge(val, isSummary) {
+    const { bg, fg } = pctStyle(val);
+    return `<span class="cell-badge" style="background:${bg};color:${isSummary?'#1d1d1f':fg}">${fmtPct(val)}</span>`;
+}
+
+async function load() {
+    const URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOUXHhUpCkh6tgvNpJzY-w5tVrhPkvEeC0W0ZWuy2YxPayuO3pvahfeKYmMZ1DwHnILTpsJFNtXLsH/pub?output=csv";
+    try {
+        const res = await fetch(URL + '&t=' + Date.now());
+        const rows = parseCSV(await res.text()).slice(1);
+
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('tbl').style.display = '';
+
+        const tbody = document.getElementById('tbody');
+
+        rows.forEach(row => {
+            if (!row[0] || !row[0].trim()) return;
+            const name = row[0].trim();
+            const nameLC = name.toLowerCase();
+            const isTotal = ['разом','сума','total','тотал','підсумок','всього','итого'].some(k => nameLC.includes(k));
+            const isDev   = nameLC.includes('відставання') || nameLC.includes('відхилення');
+
+            const tr = document.createElement('tr');
+            if (isTotal) tr.className = 'total-row';
+            if (isDev)   tr.className = 'deviation-row';
+
+            const r = i => (row[i] || '').trim();
+
+            if (isDev) {
+                tr.innerHTML = `
+                    <td class="name-cell">${name}</td>
+                    <td class="col-to-plan   group-start">${r(1)}</td>
+                    <td class="col-to-fact">${r(2)}</td>
+                    <td class="col-to-pct">${r(3)}</td>
+                    <td class="col-serv-plan  group-start">${r(4)}</td>
+                    <td class="col-serv-fact">${r(5)}</td>
+                    <td class="col-serv-share">${r(6)}</td>
+                    <td class="col-serv-pct">${r(7)}</td>
+                    <td class="col-acc-plan   group-start">${r(8)}</td>
+                    <td class="col-acc-fact">${r(9)}</td>
+                    <td class="col-acc-share">${r(10)}</td>
+                    <td class="col-acc-pct">${r(11)}</td>
+                    <td class="col-chk-plan   group-start">${r(12)}</td>
+                    <td class="col-chk-fact">${r(13)}</td>
+                    <td class="col-chk-pct">${r(14)}</td>`;
+            } else {
+                tr.innerHTML = `
+                    <td class="name-cell">${name}</td>
+                    <td class="col-to-plan   group-start">${badge(fmtInt(r(1)), 'badge-plan')}</td>
+                    <td class="col-to-fact">${badge(fmtInt(r(2)), 'badge-to')}</td>
+                    <td class="col-to-pct">${pctBadge(r(3), isTotal)}</td>
+                    <td class="col-serv-plan  group-start">${badge(fmtInt(r(4)), 'badge-plan')}</td>
+                    <td class="col-serv-fact">${badge(fmtInt(r(5)), 'badge-serv')}</td>
+                    <td class="col-serv-share">${badge(fmtShare(r(6)), 'badge-serv')}</td>
+                    <td class="col-serv-pct">${pctBadge(r(7), isTotal)}</td>
+                    <td class="col-acc-plan   group-start">${badge(fmtInt(r(8)), 'badge-plan')}</td>
+                    <td class="col-acc-fact">${badge(fmtInt(r(9)), 'badge-acc')}</td>
+                    <td class="col-acc-share">${badge(fmtShare(r(10)), 'badge-acc')}</td>
+                    <td class="col-acc-pct">${pctBadge(r(11), isTotal)}</td>
+                    <td class="col-chk-plan   group-start">${badge(fmtInt(r(12)), 'badge-plan')}</td>
+                    <td class="col-chk-fact">${badge(fmtInt(r(13)), 'badge-checks')}</td>
+                    <td class="col-chk-pct">${pctBadge(r(14), isTotal)}</td>`;
             }
-            if (col || row.length) { row.push(col); rows.push(row); }
-            return rows;
+            tbody.appendChild(tr);
+        });
+
+        // Scroll snap на першу колонку кожної групи
+        if (window.innerWidth < 768) {
+            document.querySelectorAll('.group-start').forEach(el => {
+                el.style.scrollSnapAlign = 'start';
+            });
         }
 
-        function cleanVal(val) {
-            if (!val) return 0;
-            let s = val.toString().replace('%', '').replace(/\s/g, '').replace(',', '.');
-            return parseFloat(s) || 0;
-        }
+    } catch(e) {
+        const el = document.getElementById('loader');
+        el.className = 'error';
+        el.textContent = '❌ ' + e.message;
+    }
+}
 
-        function formatDisplay(val, isPct = false) {
-            let num = cleanVal(val);
-            if (isPct) {
-                let displayPct = num < 2 ? num * 100 : num; 
-                return displayPct.toFixed(2) + '%';
-            }
-            return Math.round(num).toLocaleString('uk-UA');
-        }
-        
-        function formatShare(val) {
-            let num = cleanVal(val);
-            return num.toFixed(2);
-        }
+load();
 
-        function getPctStyle(val) {
-            const num = cleanVal(val);
-            const pct = num < 2 ? num * 100 : num;
-            
-            if (pct <= 0)  return { bg: 'rgba(255, 59, 48, 0.15)',  color: '#cc2200' };
-            if (pct < 50)  return { bg: `rgba(255, 59, 48, ${0.05 + (0.15 * (1 - pct / 50))})`,  color: '#d63b2a' };
-            if (pct < 80)  return { bg: `rgba(255, 149, 0, ${0.08 + (0.1 * ((pct - 50) / 30))})`, color: '#c97000' };
-            if (pct < 100) return { bg: `rgba(255, 204, 0, ${0.08 + (0.1 * ((pct - 80) / 20))})`, color: '#a07800' };
-            if (pct < 120) return { bg: `rgba(52, 199, 89, ${0.08 + (0.1 * ((pct - 100) / 20))})`, color: '#248a3d' };
-            return { bg: 'rgba(52, 199, 89, 0.20)', color: '#1a6e30' };
-        }
-
-        function pctCell(val, groupClass, isGroupStart = false, isTotal = false) {
-            const { bg, color } = getPctStyle(val);
-            const startClass = isGroupStart ? ' group-start' : '';
-            const style = isTotal 
-                ? `background: ${bg} !important; color: #1d1d1f !important; font-weight: 700 !important`
-                : `background: ${bg} !important; color: ${color} !important`;
-            return `<td class="val-pct ${groupClass}${startClass}" style="${style}">${formatDisplay(val, true)}</td>`;
-        }
-
-        async function loadTable() {
-            const URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOUXHhUpCkh6tgvNpJzY-w5tVrhPkvEeC0W0ZWuy2YxPayuO3pvahfeKYmMZ1DwHnILTpsJFNtXLsH/pub?output=csv";
-            try {
-                const res = await fetch(URL + '&t=' + Date.now());
-                const text = await res.text();
-                const rows = parseCSV(text);
-                const dataRows = rows.slice(1);
-                
-                document.getElementById('loader').style.display = 'none';
-                document.getElementById('dataTable').style.display = 'table';
-                const tbody = document.getElementById('tableBody');
-
-                dataRows.forEach((row, idx) => {
-                    if (!row[0] || !row[0].trim()) return;
-
-                    const tr = document.createElement('tr');
-                    const nameLC = row[0].toLowerCase().trim();
-                    const isTotal = nameLC.includes('разом') || nameLC.includes('сума') || 
-                                    nameLC.includes('total') || nameLC.includes('тотал') ||
-                                    nameLC.includes('підсумок') || nameLC.includes('всього') ||
-                                    nameLC.includes('итого');
-                    const isDeviation = nameLC.includes('відставання') || nameLC.includes('відхилення');
-                    
-                    if (isTotal) tr.className = 'total-row';
-                    if (isDeviation) tr.className = 'deviation-row';
-
-                    const factStyle = isTotal ? ' style="color: #1d1d1f !important"' : '';
-                    
-                    if (isDeviation) {
-                        tr.innerHTML = `
-                            <td class="name-cell">${row[0]}</td>
-                            <td class="val-plan group-to">${row[1] || ''}</td>
-                            <td class="val-fact group-to">${row[2] || ''}</td>
-                            <td class="val-pct group-to">${row[3] || ''}</td>
-                            <td class="val-plan group-serv group-start">${row[4] || ''}</td>
-                            <td class="val-fact group-serv">${row[5] || ''}</td>
-                            <td class="val-fact group-serv">${row[6] || ''}</td>
-                            <td class="val-pct group-serv">${row[7] || ''}</td>
-                            <td class="val-plan group-acc group-start">${row[8] || ''}</td>
-                            <td class="val-fact group-acc">${row[9] || ''}</td>
-                            <td class="val-fact group-acc">${row[10] || ''}</td>
-                            <td class="val-pct group-acc">${row[11] || ''}</td>
-                            <td class="val-plan group-checks group-start">${row[12] || ''}</td>
-                            <td class="val-fact group-checks">${row[13] || ''}</td>
-                            <td class="val-pct group-checks">${row[14] || ''}</td>
-                        `;
-                    } else {
-                        tr.innerHTML = `
-                            <td class="name-cell">${row[0]}</td>
-                            <td class="val-plan group-to">${formatDisplay(row[1])}</td>
-                            <td class="val-fact group-to"${factStyle}>${formatDisplay(row[2])}</td>
-                            ${pctCell(row[3], 'group-to', false, isTotal)}
-                            <td class="val-plan group-serv group-start">${formatDisplay(row[4])}</td>
-                            <td class="val-fact group-serv"${factStyle}>${formatDisplay(row[5])}</td>
-                            <td class="val-fact group-serv"${factStyle}>${formatShare(row[6])}</td>
-                            ${pctCell(row[7], 'group-serv', false, isTotal)}
-                            <td class="val-plan group-acc group-start">${formatDisplay(row[8])}</td>
-                            <td class="val-fact group-acc"${factStyle}>${formatDisplay(row[9])}</td>
-                            <td class="val-fact group-acc"${factStyle}>${formatShare(row[10])}</td>
-                            ${pctCell(row[11], 'group-acc', false, isTotal)}
-                            <td class="val-plan group-checks group-start">${formatDisplay(row[12])}</td>
-                            <td class="val-fact group-checks"${factStyle}>${formatDisplay(row[13])}</td>
-                            ${pctCell(row[14], 'group-checks', false, isTotal)}
-                        `;
-                    }
-                    tbody.appendChild(tr);
-                });
-            } catch (e) {
-                document.getElementById('loader').textContent = "Помилка завантаження даних";
-            }
-        }
-
-        loadTable();
-
-        if (window.innerWidth <= 960) {
-            document.querySelector('.mobile-hint').style.display = 'block';
-        }
-    </script>
+// Свайп назад
+let x0=0, y0=0, sw=false;
+document.addEventListener('touchstart', e=>{x0=e.changedTouches[0].screenX; y0=e.changedTouches[0].screenY; sw=true;},{passive:true});
+document.addEventListener('touchmove',  e=>{if(Math.abs(e.changedTouches[0].screenY-y0)>25) sw=false;},{passive:true});
+document.addEventListener('touchend',   e=>{
+    if(sw && e.changedTouches[0].screenX-x0>120 && Math.abs(e.changedTouches[0].screenY-y0)<50)
+        window.location.href='index.html';
+    sw=false;
+},{passive:true});
+</script>
 </body>
 </html>
