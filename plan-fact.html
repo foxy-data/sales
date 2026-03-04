@@ -93,20 +93,11 @@
             .cell-badge { font-size: 11px; padding: 2px 5px; }
         }
 
-        /* ===== МОБІЛЬНИЙ =====
-           sticky ПК = 82px
-           ТО: 3 колонки = (100vw - 82px) / 3 кожна  → рівно вкладаються в екран
-           Послуги/АСС/Чеки: 4 колонки = (100vw - 82px) / 4 кожна
-           Таблиця ширша за екран → горизонтальний скрол
-           Snap: перша колонка кожної групи клацає до лівого краю після sticky
-        */
         @media (max-width: 767px) {
             .table-card {
                 scroll-snap-type: x mandatory;
                 scroll-padding-left: 82px;
             }
-
-            /* sticky */
             .name-cell, th:first-child {
                 width: 82px; min-width: 82px; max-width: 82px;
                 font-size: 9px; padding: 4px 4px;
@@ -116,42 +107,11 @@
                 border-right: 1px solid #e0e0e5;
             }
             th:first-child { z-index: 201 !important; }
-
-            /* ТО — кожна з 3 колонок = рівно 1/3 вільного місця */
-            .col-to-plan, .col-to-fact, .col-to-pct {
-                width: calc((100vw - 82px) / 3);
-                min-width: calc((100vw - 82px) / 3);
-                max-width: calc((100vw - 82px) / 3);
-            }
-
-            /* Послуги, АСС, Чеки — кожна з 4 колонок = 1/4 вільного місця */
-            .col-serv-plan, .col-serv-fact, .col-serv-share, .col-serv-pct,
-            .col-acc-plan,  .col-acc-fact,  .col-acc-share,  .col-acc-pct,
-            .col-chk-plan,  .col-chk-fact,  .col-chk-share,  .col-chk-pct {
-                width: calc((100vw - 82px) / 4);
-                min-width: calc((100vw - 82px) / 4);
-                max-width: calc((100vw - 82px) / 4);
-            }
-
-            /* Мінімальна ширина таблиці = sticky + ТО(3) + Посл(4) + АСС(4) + Чеки(3) = 14 колонок
-               Але оскільки колонки задані через vw, таблиця автоматично буде ширшою за екран */
-            table {
-                min-width: calc(82px
-                    + (100vw - 82px) * 3 / 3
-                    + (100vw - 82px) * 4 / 4
-                    + (100vw - 82px) * 4 / 4
-                    + (100vw - 82px) * 3 / 4);
-            }
-
-            /* Snap — перша колонка кожної групи "клацає" до лівого краю (після sticky) */
-            .col-to-plan, .col-serv-plan, .col-acc-plan, .col-chk-plan {
-                scroll-snap-align: start;
-            }
-
             td { font-size: 10.5px; padding: 4px 2px; }
             th { font-size: 8px; padding: 4px 2px; }
             th.group-header { font-size: 8.5px; padding: 5px 2px; }
             .cell-badge { font-size: 10px; padding: 2px 2px; border-radius: 5px; }
+            /* ширини колонок задає JS через setMobileWidths() */
         }
     </style>
 </head>
@@ -335,13 +295,7 @@ async function load() {
         });
 
         colorizePct();
-
-        // Scroll snap на першу колонку кожної групи
-        if (window.innerWidth < 768) {
-            document.querySelectorAll('th.group-start, td.group-start').forEach(el => {
-                el.style.scrollSnapAlign = 'start';
-            });
-        }
+        setMobileWidths();
 
     } catch(e) {
         const el = document.getElementById('loader');
