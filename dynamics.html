@@ -276,9 +276,26 @@ function parseCSV(text) {
     return rows.filter(r => r.some(c => c));
 }
 
+const MONTHS_MAP = {
+    'січень':1,'лютий':2,'березень':3,'квітень':4,'травень':5,'червень':6,
+    'липень':7,'серпень':8,'вересень':9,'жовтень':10,'листопад':11,'грудень':12,
+    'січ':1,'лют':2,'бер':3,'кві':4,'тра':5,'чер':6,
+    'лип':7,'сер':8,'вер':9,'жов':10,'лис':11,'гру':12,
+};
+
+function monthNum(str) {
+    const lo = (str||'').toLowerCase().trim();
+    // Повна назва або скорочена
+    for (const [k,v] of Object.entries(MONTHS_MAP)) {
+        if (lo === k || lo.startsWith(k)) return v;
+    }
+    return null;
+}
+
 function toNum(v) {
     if (!v && v !== 0) return null;
     const s = String(v).replace(/\s|\u00a0/g,'').replace('%','').replace(',','.');
+    if (['#div/0!','#value!','#ref!','#n/a','#name?'].includes(s.toLowerCase())) return null;
     const n = parseFloat(s);
     return isNaN(n) ? null : n;
 }
@@ -293,159 +310,45 @@ function fmtVal(v) {
     return n.toLocaleString('uk-UA');
 }
 
-// ═══════════════════════════════════════════════════════════
-// DETECT STRUCTURE
-// CSV може бути різної структури. Підтримуємо два формати:
-//
-// Формат A (широкий): рядки = показники, стовпці = місяці/роки
-//   | Показник | 2024-01 | 2024-02 | ... |
-//   | ТО       | 100000  | 120000  | ... |
-//
-// Формат B (вузький): рядки = (рік, місяць, показник, значення)
-//   | Рік | Місяць | Показник | Значення |
-// ═══════════════════════════════════════════════════════════
+// Структура: col0=рік, col1=місяць(текст), col2+=показники
+// Рядки = кожен місяць року
 function detectAndParse(rows) {
     if (!rows.length) return;
     const header = rows[0];
+    const metrics = header.slice(2).map(h => h.trim()).filter(Boolean);
+    allMetrics = metrics;
 
-    // Перевіряємо чи є стовпець з роком/датою
-    const h0 = (header[0] || '').toLowerCase();
-    const h1 = (header[1] || '').toLowerCase();
-
-    // Спробуємо Формат B (перший або другий стовпець - рік)
-    const isYearCol = (h) => /рік|year|дата|date/.test(h) || /^\d{4}$/.test(h.trim());
-    if (isYearCol(h0) || isYearCol(h1)) {
-        parseFormatB(rows);
-        return;
-    }
-
-    // Формат A: заголовок містить дати типу "2024-01", "Січ 2024", "01.2024"
-    const datePattern = /(\d{4})[-./\s](\d{1,2})|(\d{1,2})[-./\s](\d{4})|(січ|лют|бер|кві|тра|чер|лип|сер|вер|жов|лис|гру)/i;
-    const hasDateCols = header.slice(1).some(h => datePattern.test(h));
-    if (hasDateCols) {
-        parseFormatA(rows);
-        return;
-    }
-
-    // Формат C: стовпці - місяці (числа 1-12 або назви), рядки - показники, перша колонка - рік або назва
-    // Визначаємо рік з першого не-порожнього рядка даних або з заголовку
-    parseFormatC(rows);
-}
-
-function extractYearMonth(str) {
-    str = String(str).trim();
-    // 2024-01 або 2024/01
-    let m = str.match(/^(\d{4})[-./](\d{1,2})$/);
-    if (m) return { year: +m[1], month: +m[2] };
-    // 01-2024
-    m = str.match(/^(\d{1,2})[-./](\d{4})$/);
-    if (m) return { year: +m[2], month: +m[1] };
-    // "Січень 2024" або "Січ 2024"
-    const ukM = ['січ','лют','бер','кві','тра','чер','лип','сер','вер','жов','лис','гру'];
-    const lo = str.toLowerCase();
-    for (let i = 0; i < ukM.length; i++) {
-        if (lo.startsWith(ukM[i])) {
-            const yr = str.match(/(\d{4})/);
-            return yr ? { year: +yr[1], month: i + 1 } : null;
-        }
-    }
-    return null;
-}
-
-function parseFormatA(rows) {
-    const header = rows[0];
-    const colMeta = header.slice(1).map((h, i) => ({ idx: i + 1, ...extractYearMonth(h) })).filter(c => c && c.year);
+    let lastYear = null;
 
     rows.slice(1).forEach(row => {
-        const metric = (row[0] || '').trim();
-        if (!metric) return;
-        colMeta.forEach(c => {
-            const val = toNum(row[c.idx]);
+        const rawYear  = (row[0] || '').trim();
+        const rawMonth = (row[1] || '').trim();
+
+        const yr = parseInt(rawYear);
+        if (!isNaN(yr) && yr > 2000 && yr < 2100) lastYear = yr;
+        if (!lastYear) return;
+
+        const mo = monthNum(rawMonth);
+        if (!mo) return;
+
+        if (!parsedByYear[lastYear]) parsedByYear[lastYear] = {};
+
+        metrics.forEach((metric, mi) => {
+            const val = toNum(row[mi + 2]);
             if (val === null) return;
-            if (!parsedByYear[c.year]) parsedByYear[c.year] = {};
-            if (!parsedByYear[c.year][metric]) parsedByYear[c.year][metric] = {};
-            parsedByYear[c.year][metric][c.month] = val;
+            if (!parsedByYear[lastYear][metric]) parsedByYear[lastYear][metric] = {};
+            parsedByYear[lastYear][metric][mo] = val;
         });
     });
-    finalizeParsed();
-}
 
-function parseFormatB(rows) {
-    const header = rows[0].map(h => h.toLowerCase());
-    const iYear   = header.findIndex(h => /рік|year/.test(h));
-    const iMonth  = header.findIndex(h => /міс|month/.test(h));
-    const iMetric = header.findIndex(h => /показ|metric|назв/.test(h));
-    const iValue  = header.findIndex(h => /знач|value|факт/.test(h));
-
-    if (iYear < 0 || iMonth < 0 || iValue < 0) { parseFormatC(rows); return; }
-
-    rows.slice(1).forEach(row => {
-        const year   = +row[iYear];
-        const month  = +row[iMonth];
-        const metric = iMetric >= 0 ? (row[iMetric]||'').trim() : 'Значення';
-        const val    = toNum(row[iValue]);
-        if (!year || !month || val === null) return;
-        if (!parsedByYear[year]) parsedByYear[year] = {};
-        if (!parsedByYear[year][metric]) parsedByYear[year][metric] = {};
-        parsedByYear[year][metric][month] = val;
-    });
-    finalizeParsed();
-}
-
-// Формат C: рядки = показники, стовпці = місяці (1..12 або назви), рядок може мати рік
-function parseFormatC(rows) {
-    const header = rows[0];
-
-    // Знаходимо стовпці-місяці
-    const ukMonths = ['січ','лют','бер','кві','тра','чер','лип','сер','вер','жов','лис','гру'];
-    const colMap = {}; // colIdx -> monthNum
-
-    header.forEach((h, i) => {
-        if (i === 0) return;
-        const n = +h;
-        if (n >= 1 && n <= 12) { colMap[i] = n; return; }
-        const lo = h.toLowerCase().trim();
-        for (let mi = 0; mi < ukMonths.length; mi++) {
-            if (lo.startsWith(ukMonths[mi])) { colMap[i] = mi + 1; return; }
-        }
-    });
-
-    let currentYear = new Date().getFullYear();
-
-    rows.slice(1).forEach(row => {
-        const first = (row[0] || '').trim();
-        if (!first) return;
-
-        // Якщо перша колонка - рік
-        if (/^\d{4}$/.test(first)) { currentYear = +first; return; }
-
-        // Якщо рядок містить рік в дужках або після тире
-        const yrMatch = first.match(/(\d{4})/);
-        if (yrMatch && Object.keys(colMap).length === 0) { currentYear = +yrMatch[1]; return; }
-
-        const metric = first;
-        if (!parsedByYear[currentYear]) parsedByYear[currentYear] = {};
-        if (!parsedByYear[currentYear][metric]) parsedByYear[currentYear][metric] = {};
-
-        Object.entries(colMap).forEach(([ci, month]) => {
-            const val = toNum(row[+ci]);
-            if (val !== null) parsedByYear[currentYear][metric][month] = val;
-        });
-    });
     finalizeParsed();
 }
 
 function finalizeParsed() {
-    allYears   = Object.keys(parsedByYear).map(Number).sort((a,b) => b - a);
-    allMetrics = [];
-    const seen = new Set();
-    allYears.forEach(y => {
-        Object.keys(parsedByYear[y] || {}).forEach(m => {
-            if (!seen.has(m)) { seen.add(m); allMetrics.push(m); }
-        });
-    });
+    allYears = Object.keys(parsedByYear).map(Number).sort((a,b) => b - a);
     selectedYear = allYears[0] || new Date().getFullYear();
 }
+
 
 // ═══════════════════════════════════════════════════════════
 // BADGE COLOR by metric name
