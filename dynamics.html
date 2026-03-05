@@ -151,7 +151,7 @@
         .chip .chip-x { opacity: 0.6; font-size: 13px; line-height: 1; }
         .chip:hover .chip-x { opacity: 1; }
 
-        .chart-wrap { position: relative; height: 280px; }
+        .chart-wrap { position: relative; height: 320px; }
         @media (max-width: 600px) { .chart-wrap { height: 220px; } }
 
         .empty-chart {
@@ -624,50 +624,75 @@ function renderChart() {
                 byX[key].push(p);
             });
 
-            const LABEL_H = 13; // висота підпису px
-            const GAP = 2;
+            const FONT_SIZE = 10;
+            const PAD_X = 4, PAD_Y = 3;
+            const LABEL_H = FONT_SIZE + PAD_Y * 2 + 2;
+            const GAP = 4;
+
+            ctx.font = `600 ${FONT_SIZE}px Inter, sans-serif`;
+            points.forEach(p => { p.text = fmtVal(p.val); p.tw = ctx.measureText(p.text).width; });
 
             Object.values(byX).forEach(group => {
-                // Сортуємо по Y (зверху вниз)
-                group.sort((a,b) => a.y - b.y);
+                group.sort((a, b) => a.y - b.y);
+                group.forEach(p => { p.labelY = p.y - PAD_Y - FONT_SIZE / 2 - 6; });
 
-                // Перший підпис — над точкою
-                group.forEach((p, i) => {
-                    p.labelY = p.y - 8;
-                });
-
-                // Перевіряємо накладання і зсуваємо
-                for (let iter = 0; iter < 10; iter++) {
+                for (let iter = 0; iter < 20; iter++) {
                     let changed = false;
                     for (let i = 1; i < group.length; i++) {
-                        const prev = group[i-1];
+                        const prev = group[i - 1];
                         const cur  = group[i];
-                        const overlap = (prev.labelY) - (cur.labelY - LABEL_H - GAP);
-                        if (overlap > 0) {
-                            cur.labelY -= overlap + GAP;
+                        const diff = (prev.labelY + LABEL_H + GAP) - cur.labelY;
+                        if (diff > 0) {
+                            prev.labelY -= diff / 2;
+                            cur.labelY  += diff / 2;
                             changed = true;
                         }
                     }
                     if (!changed) break;
                 }
 
-                // Малюємо підписи
                 group.forEach(p => {
-                    const text = fmtVal(p.val);
-                    ctx.font = '600 9px Inter, sans-serif';
-                    const tw = ctx.measureText(text).width;
-                    const px = p.x - tw/2;
-                    const py = p.labelY;
+                    const bx = p.x - p.tw / 2 - PAD_X;
+                    const by = p.labelY - FONT_SIZE - PAD_Y;
+                    const bw = p.tw + PAD_X * 2;
+                    const bh = FONT_SIZE + PAD_Y * 2;
 
-                    // Фон
-                    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                    // Тінь
+                    ctx.shadowColor = 'rgba(0,0,0,0.18)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetY = 1;
+
+                    // Білий фон
+                    ctx.fillStyle = '#ffffff';
                     ctx.beginPath();
-                    ctx.roundRect(px - 2, py - 9, tw + 4, 11, 3);
+                    ctx.roundRect(bx, by, bw, bh, 4);
                     ctx.fill();
+
+                    // Бордер
+                    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.roundRect(bx, by, bw, bh, 4);
+                    ctx.stroke();
 
                     // Текст
                     ctx.fillStyle = p.color;
-                    ctx.fillText(text, px, py);
+                    ctx.font = `700 ${FONT_SIZE}px Inter, sans-serif`;
+                    ctx.fillText(p.text, p.x - p.tw / 2, p.labelY);
+
+                    // Пунктирна лінія від підпису до точки
+                    const lineStartY = by + bh;
+                    if (p.y - lineStartY > 6) {
+                        ctx.strokeStyle = p.color + '66';
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([2, 2]);
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, lineStartY);
+                        ctx.lineTo(p.x, p.y - 5);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
                 });
             });
 
@@ -684,7 +709,7 @@ function renderChart() {
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
-            layout: { padding: { top: 20 } },
+            layout: { padding: { top: 30, left: 8, right: 8 } },
             plugins: {
                 legend: {
                     display: datasets.length > 1,
