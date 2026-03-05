@@ -270,6 +270,7 @@ let selectedMetrics = new Set();
 let viewMode = 'table';
 let chartInstance = null;
 let parsedByYear = {};           // parsedByYear[year][metric][month] = value
+let yearColorMap = {};           // yearColorMap[year] = color — фіксований колір на рік
 
 // ═══════════════════════════════════════════════════════════
 // CSV PARSE
@@ -343,7 +344,11 @@ function detectAndParse(rows) {
         });
     });
     allYears = Object.keys(parsedByYear).map(Number).sort((a,b) => b - a);
-    // За замовчуванням обираємо найновіший рік
+    // Фіксовані кольори для кожного року — призначаються один раз назавжди
+    allYears.forEach((y, i) => {
+        const step = Math.floor(CHART_COLORS.length / allYears.length) || 1;
+        yearColorMap[y] = CHART_COLORS[(i * step) % CHART_COLORS.length];
+    });
     if (allYears.length) selectedYears.add(allYears[0]);
 }
 
@@ -423,7 +428,8 @@ function renderTable() {
             const th = document.createElement('th');
             th.colSpan = months.length;
             th.textContent = y;
-            th.style.cssText = `font-weight:800;font-size:11px;border-bottom:2px solid ${CHART_COLORS[yi % CHART_COLORS.length]};color:${CHART_COLORS[yi % CHART_COLORS.length]};`;
+            const yc = yearColorMap[y] || CHART_COLORS[yi % CHART_COLORS.length];
+            th.style.cssText = `font-weight:800;font-size:11px;border-bottom:2px solid ${yc};color:${yc};`;
             if (yi > 0) th.classList.add('grp-start');
             trY.appendChild(th);
         });
@@ -532,10 +538,10 @@ function renderChips() {
     const years = [...selectedYears].sort((a,b) => a-b);
     const metrics = [...selectedMetrics];
     // Генеруємо чипи для кожної комбінації метрика × рік
-    const YEAR_STEP_C = Math.max(1, Math.floor(CHART_COLORS.length / Math.max(years.length, 1)));
     years.forEach((y, yi) => {
         metrics.forEach((metric, mi) => {
-            const colorIdx = (yi * YEAR_STEP_C + mi) % CHART_COLORS.length;
+            const baseIdx = CHART_COLORS.indexOf(yearColorMap[y]);
+            const colorIdx = (baseIdx + mi * 2) % CHART_COLORS.length;
             const color = CHART_COLORS[colorIdx];
             const chip = document.createElement('div');
             chip.className = 'chip';
@@ -580,17 +586,15 @@ function renderChart() {
     const months = [...monthsSet].sort((a,b) => a-b);
     const labels = months.map(m => MONTHS_UK[m-1]?.slice(0,3) || m);
 
-    // Будуємо datasets — колір залежить від (yearIdx, metricIdx)
-    // Роки розносяться максимально далеко по палітрі, метрики — зміщення
+    // Будуємо datasets — колір = yearColorMap[y] + зсув по метриці
     const datasets = [];
-    const YEAR_STEP = Math.max(1, Math.floor(CHART_COLORS.length / Math.max(years.length, 1)));
 
     years.forEach((y, yi) => {
         metrics.forEach((metric, mi) => {
             const mv = parsedByYear[y]?.[metric] || {};
-            // yi*YEAR_STEP — великий крок між роками (напр. 0, 5, 10...)
-            // mi — маленький зсув між метриками одного року
-            const colorIdx = (yi * YEAR_STEP + mi) % CHART_COLORS.length;
+            // Базовий індекс кольору з yearColorMap, зміщення на mi для кількох метрик
+            const baseIdx = CHART_COLORS.indexOf(yearColorMap[y]);
+            const colorIdx = (baseIdx + mi * 2) % CHART_COLORS.length;
             const color = CHART_COLORS[colorIdx];
             const label = years.length > 1 ? `${metric} (${y})` : metric;
             datasets.push({
