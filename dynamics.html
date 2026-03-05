@@ -246,16 +246,13 @@ const GROUP_HINTS = [
 // ═══════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════
-let rawData = [];          // [{year, month(1-12), metric, value}]
 let allYears = [];
 let allMetrics = [];
-let selectedYear = null;
-let selectedMetrics = new Set(); // Set of metric names
-let viewMode = 'table';    // 'table' | 'chart'
+let selectedYears = new Set();   // мультивибір років
+let selectedMetrics = new Set();
+let viewMode = 'table';
 let chartInstance = null;
-
-// Структура: parsedByYear[year][metric][month] = value
-let parsedByYear = {};
+let parsedByYear = {};           // parsedByYear[year][metric][month] = value
 
 // ═══════════════════════════════════════════════════════════
 // CSV PARSE
@@ -282,16 +279,13 @@ const MONTHS_MAP = {
     'січ':1,'лют':2,'бер':3,'кві':4,'тра':5,'чер':6,
     'лип':7,'сер':8,'вер':9,'жов':10,'лис':11,'гру':12,
 };
-
 function monthNum(str) {
     const lo = (str||'').toLowerCase().trim();
-    // Повна назва або скорочена
     for (const [k,v] of Object.entries(MONTHS_MAP)) {
         if (lo === k || lo.startsWith(k)) return v;
     }
     return null;
 }
-
 function toNum(v) {
     if (!v && v !== 0) return null;
     const s = String(v).replace(/\s|\u00a0/g,'').replace('%','').replace(',','.');
@@ -299,7 +293,6 @@ function toNum(v) {
     const n = parseFloat(s);
     return isNaN(n) ? null : n;
 }
-
 function fmtVal(v) {
     if (v === null || v === undefined) return '—';
     const n = Number(v);
@@ -310,29 +303,21 @@ function fmtVal(v) {
     return n.toLocaleString('uk-UA');
 }
 
-// Структура: col0=рік, col1=місяць(текст), col2+=показники
-// Рядки = кожен місяць року
 function detectAndParse(rows) {
     if (!rows.length) return;
     const header = rows[0];
     const metrics = header.slice(2).map(h => h.trim()).filter(Boolean);
     allMetrics = metrics;
-
     let lastYear = null;
-
     rows.slice(1).forEach(row => {
         const rawYear  = (row[0] || '').trim();
         const rawMonth = (row[1] || '').trim();
-
         const yr = parseInt(rawYear);
         if (!isNaN(yr) && yr > 2000 && yr < 2100) lastYear = yr;
         if (!lastYear) return;
-
         const mo = monthNum(rawMonth);
         if (!mo) return;
-
         if (!parsedByYear[lastYear]) parsedByYear[lastYear] = {};
-
         metrics.forEach((metric, mi) => {
             const val = toNum(row[mi + 2]);
             if (val === null) return;
@@ -340,18 +325,13 @@ function detectAndParse(rows) {
             parsedByYear[lastYear][metric][mo] = val;
         });
     });
-
-    finalizeParsed();
-}
-
-function finalizeParsed() {
     allYears = Object.keys(parsedByYear).map(Number).sort((a,b) => b - a);
-    selectedYear = allYears[0] || new Date().getFullYear();
+    // За замовчуванням обираємо найновіший рік
+    if (allYears.length) selectedYears.add(allYears[0]);
 }
-
 
 // ═══════════════════════════════════════════════════════════
-// BADGE COLOR by metric name
+// BADGE COLOR
 // ═══════════════════════════════════════════════════════════
 function badgeClass(name) {
     const lo = name.toLowerCase();
@@ -363,90 +343,135 @@ function badgeClass(name) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// RENDER TABLE
+// RENDER TABLE — показує дані для ВСІХ обраних років
 // ═══════════════════════════════════════════════════════════
 function renderTable() {
     const card = document.getElementById('tableCard');
     card.innerHTML = '';
 
-    const yearData = parsedByYear[selectedYear] || {};
-    // Місяці які є хоча б в одному показнику
-    const monthsPresent = new Set();
-    Object.values(yearData).forEach(mv => Object.keys(mv).forEach(m => monthsPresent.add(+m)));
-    const months = [...monthsPresent].sort((a,b) => a-b);
-
-    if (!months.length) {
-        card.innerHTML = '<div class="status-box">Немає даних за обраний рік</div>';
+    const years = [...selectedYears].sort((a,b) => a-b);
+    if (!years.length) {
+        card.innerHTML = '<div class="status-box">Оберіть рік</div>';
         return;
     }
 
-    // Hint
+    // Збираємо всі місяці по всіх обраних роках
+    const monthsSet = new Set();
+    years.forEach(y => {
+        Object.values(parsedByYear[y] || {}).forEach(mv =>
+            Object.keys(mv).forEach(m => monthsSet.add(+m))
+        );
+    });
+    const months = [...monthsSet].sort((a,b) => a-b);
+
+    if (!months.length) {
+        card.innerHTML = '<div class="status-box">Немає даних</div>';
+        return;
+    }
+
     const hint = document.createElement('div');
     hint.className = 'table-hint';
-    hint.innerHTML = `<span>💡</span> Натисніть на рядок щоб додати показник на <span>графік</span>. Можна обрати декілька.`;
+    hint.innerHTML = `<span>💡</span> Натисніть на рядок щоб додати показник на <span>графік</span>`;
     card.appendChild(hint);
 
     const wrap = document.createElement('div');
     wrap.style.cssText = 'overflow-x:auto;-webkit-overflow-scrolling:touch;';
     card.appendChild(wrap);
 
+    // Ширина: якщо кілька років — менша колонка
+    const colW = Math.max(44, Math.floor((window.innerWidth - 115) / (months.length * years.length)));
+    const totalW = 115 + colW * months.length * years.length;
+
     const tbl = document.createElement('table');
-    const colW = Math.max(52, Math.floor((window.innerWidth - 130) / months.length));
-    const totalW = 110 + colW * months.length;
-    tbl.style.width = Math.max(totalW, wrap.offsetWidth || 320) + 'px';
+    tbl.style.width = totalW + 'px';
 
     // Colgroup
     const cg = document.createElement('colgroup');
-    const c0 = document.createElement('col'); c0.style.width = '110px'; cg.appendChild(c0);
-    months.forEach(() => { const c = document.createElement('col'); c.style.width = colW+'px'; cg.appendChild(c); });
+    const c0 = document.createElement('col'); c0.style.width = '115px'; cg.appendChild(c0);
+    years.forEach(() => months.forEach(() => {
+        const c = document.createElement('col'); c.style.width = colW+'px'; cg.appendChild(c);
+    }));
     tbl.appendChild(cg);
 
-    // Header
     const thead = document.createElement('thead');
-    const trH = document.createElement('tr');
-    const thN = document.createElement('th');
-    thN.className = 'col-metric'; thN.textContent = 'Показник';
-    trH.appendChild(thN);
-    months.forEach(m => {
-        const th = document.createElement('th');
-        th.textContent = MONTHS_UK[m-1] || m;
-        trH.appendChild(th);
-    });
-    thead.appendChild(trH);
+
+    // Рядок 1: групи по роках (якщо > 1 рік)
+    if (years.length > 1) {
+        const trY = document.createElement('tr');
+        const thCorner = document.createElement('th');
+        thCorner.className = 'col-metric'; thCorner.rowSpan = 2;
+        thCorner.textContent = 'Показник';
+        trY.appendChild(thCorner);
+        years.forEach((y, yi) => {
+            const th = document.createElement('th');
+            th.colSpan = months.length;
+            th.textContent = y;
+            th.style.cssText = `font-weight:800;font-size:11px;border-bottom:2px solid ${CHART_COLORS[yi % CHART_COLORS.length]};color:${CHART_COLORS[yi % CHART_COLORS.length]};`;
+            if (yi > 0) th.classList.add('grp-start');
+            trY.appendChild(th);
+        });
+        thead.appendChild(trY);
+
+        // Рядок 2: місяці під кожним роком
+        const trM = document.createElement('tr');
+        years.forEach((y, yi) => {
+            months.forEach((m, mi) => {
+                const th = document.createElement('th');
+                th.textContent = MONTHS_UK[m-1]?.slice(0,3) || m;
+                if (mi === 0 && yi > 0) th.classList.add('grp-start');
+                trM.appendChild(th);
+            });
+        });
+        thead.appendChild(trM);
+    } else {
+        // Один рік — простий заголовок
+        const trH = document.createElement('tr');
+        const thN = document.createElement('th');
+        thN.className = 'col-metric'; thN.textContent = 'Показник';
+        trH.appendChild(thN);
+        months.forEach(m => {
+            const th = document.createElement('th');
+            th.textContent = MONTHS_UK[m-1] || m;
+            trH.appendChild(th);
+        });
+        thead.appendChild(trH);
+    }
     tbl.appendChild(thead);
 
     // Body
     const tbody = document.createElement('tbody');
     allMetrics.forEach(metric => {
-        const mv = yearData[metric];
-        if (!mv) return; // метрика відсутня в цьому році
+        // Перевіряємо чи є дані хоч в одному обраному році
+        const hasData = years.some(y => parsedByYear[y]?.[metric]);
+        if (!hasData) return;
 
         const tr = document.createElement('tr');
         tr.className = 'metric-row';
         tr.dataset.metric = metric;
         if (selectedMetrics.has(metric)) tr.classList.add('selected');
 
-        // Name cell
         const tdN = document.createElement('td');
         tdN.className = 'col-metric';
         tdN.textContent = metric;
         tr.appendChild(tdN);
 
-        // Value cells
         const bc = badgeClass(metric);
-        months.forEach(m => {
-            const val = mv[m];
-            const td = document.createElement('td');
-            if (val !== undefined && val !== null) {
-                const sp = document.createElement('span');
-                sp.className = 'badge ' + (selectedMetrics.has(metric) ? bc : 'badge-other');
-                sp.textContent = fmtVal(val);
-                td.appendChild(sp);
-            } else {
-                td.textContent = '—';
-                td.style.color = '#ccc';
-            }
-            tr.appendChild(td);
+        years.forEach((y, yi) => {
+            const mv = parsedByYear[y]?.[metric] || {};
+            months.forEach((m, mi) => {
+                const val = mv[m];
+                const td = document.createElement('td');
+                if (mi === 0 && yi > 0) td.classList.add('grp-start');
+                if (val !== undefined && val !== null) {
+                    const sp = document.createElement('span');
+                    sp.className = 'badge ' + (selectedMetrics.has(metric) ? bc : 'badge-other');
+                    sp.textContent = fmtVal(val);
+                    td.appendChild(sp);
+                } else {
+                    td.textContent = '—'; td.style.color = '#ccc';
+                }
+                tr.appendChild(td);
+            });
         });
 
         tr.addEventListener('click', () => toggleMetric(metric));
@@ -457,50 +482,39 @@ function renderTable() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// TOGGLE METRIC SELECTION
+// TOGGLE METRIC
 // ═══════════════════════════════════════════════════════════
 function toggleMetric(metric) {
-    if (selectedMetrics.has(metric)) {
-        selectedMetrics.delete(metric);
-    } else {
-        selectedMetrics.add(metric);
-    }
-    // Оновлюємо вигляд рядка без перерендеру таблиці
+    if (selectedMetrics.has(metric)) selectedMetrics.delete(metric);
+    else selectedMetrics.add(metric);
+
     document.querySelectorAll('tr.metric-row').forEach(tr => {
         const m = tr.dataset.metric;
-        const isSelected = selectedMetrics.has(m);
-        tr.classList.toggle('selected', isSelected);
-        const bc = badgeClass(m);
+        const sel = selectedMetrics.has(m);
+        tr.classList.toggle('selected', sel);
         tr.querySelectorAll('.badge').forEach(sp => {
-            sp.className = 'badge ' + (isSelected ? bc : 'badge-other');
+            sp.className = 'badge ' + (sel ? badgeClass(m) : 'badge-other');
         });
     });
-
     renderChips();
     renderChart();
 
-    // Якщо ми в таблиці і обрали перший показник — підказуємо переключитись
     if (selectedMetrics.size === 1 && viewMode === 'table') {
-        // м'яко підсвітити кнопку графіку
-        document.getElementById('btnChart').style.background = '#e8f0fe';
-        document.getElementById('btnChart').style.color = 'var(--accent)';
-        setTimeout(() => {
-            document.getElementById('btnChart').style.background = '';
-            document.getElementById('btnChart').style.color = '';
-        }, 1500);
+        const btn = document.getElementById('btnChart');
+        btn.style.background = '#e8f0fe'; btn.style.color = 'var(--accent)';
+        setTimeout(() => { btn.style.background = ''; btn.style.color = ''; }, 1500);
     }
 }
 
 // ═══════════════════════════════════════════════════════════
-// CHIPS (обрані показники)
+// CHIPS
 // ═══════════════════════════════════════════════════════════
 function renderChips() {
     const cont = document.getElementById('selectedChips');
     cont.innerHTML = '';
     let ci = 0;
     selectedMetrics.forEach(metric => {
-        const color = CHART_COLORS[ci % CHART_COLORS.length];
-        ci++;
+        const color = CHART_COLORS[ci++ % CHART_COLORS.length];
         const chip = document.createElement('div');
         chip.className = 'chip';
         chip.style.cssText = `background:${color}22;color:${color};border:1.5px solid ${color}55;`;
@@ -509,74 +523,187 @@ function renderChips() {
         cont.appendChild(chip);
     });
 
+    const yrs = [...selectedYears].sort((a,b)=>a-b).join(', ');
     const sub = document.getElementById('chartSubtitle');
     sub.textContent = selectedMetrics.size
-        ? `Обрано: ${selectedMetrics.size} показник${selectedMetrics.size > 1 ? 'и' : ''} • ${selectedYear} рік`
+        ? `Обрано: ${selectedMetrics.size} показник${selectedMetrics.size > 1 ? 'и' : ''} • ${yrs}`
         : 'Оберіть показники у таблиці';
 }
 
 // ═══════════════════════════════════════════════════════════
-// CHART
+// CHART — підписи без накладань
 // ═══════════════════════════════════════════════════════════
 function renderChart() {
     const body = document.getElementById('chartBody');
 
     if (!selectedMetrics.size) {
         if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-        body.innerHTML = `
-            <div class="empty-chart">
-                <div class="empty-chart-icon">📊</div>
-                <div class="empty-chart-text">Натисніть на рядок у таблиці, щоб додати показник</div>
-            </div>`;
+        body.innerHTML = `<div class="empty-chart">
+            <div class="empty-chart-icon">📊</div>
+            <div class="empty-chart-text">Натисніть на рядок у таблиці, щоб додати показник</div>
+        </div>`;
         return;
     }
 
-    const yearData = parsedByYear[selectedYear] || {};
-    // Місяці які є хоча б в одному обраному показнику
-    const monthsSet = new Set();
-    selectedMetrics.forEach(m => {
-        const mv = yearData[m] || {};
-        Object.keys(mv).forEach(mo => monthsSet.add(+mo));
-    });
-    const months = [...monthsSet].sort((a,b)=>a-b);
-    const labels = months.map(m => MONTHS_UK[m-1] || m);
+    const years = [...selectedYears].sort((a,b) => a-b);
+    const metrics = [...selectedMetrics];
 
+    // Місяці: об'єднуємо всі наявні по всіх роках
+    const monthsSet = new Set();
+    years.forEach(y => metrics.forEach(m => {
+        Object.keys(parsedByYear[y]?.[m] || {}).forEach(mo => monthsSet.add(+mo));
+    }));
+    const months = [...monthsSet].sort((a,b) => a-b);
+    const labels = months.map(m => MONTHS_UK[m-1]?.slice(0,3) || m);
+
+    // Будуємо datasets
+    // Якщо 1 рік — колір по метриці
+    // Якщо кілька років — колір по (рік+метрика), лінія суцільна/штрихована по роках
+    const DASH_PATTERNS = [[], [6,3], [2,3], [8,3,2,3]];
     const datasets = [];
-    let ci = 0;
-    selectedMetrics.forEach(metric => {
-        const mv = yearData[metric] || {};
-        const color = CHART_COLORS[ci % CHART_COLORS.length];
-        ci++;
-        datasets.push({
-            label: metric,
-            data: months.map(m => mv[m] ?? null),
-            borderColor: color,
-            backgroundColor: color + '22',
-            pointBackgroundColor: color,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            tension: 0.35,
-            fill: selectedMetrics.size === 1,
-            spanGaps: true,
+    let colorIdx = 0;
+    const metricColorMap = {};
+    metrics.forEach(m => { metricColorMap[m] = CHART_COLORS[colorIdx++ % CHART_COLORS.length]; });
+
+    years.forEach((y, yi) => {
+        metrics.forEach(metric => {
+            const mv = parsedByYear[y]?.[metric] || {};
+            const color = metricColorMap[metric];
+            const dash = DASH_PATTERNS[yi % DASH_PATTERNS.length];
+            const label = years.length > 1 ? `${metric} (${y})` : metric;
+            datasets.push({
+                label,
+                data: months.map(m => mv[m] ?? null),
+                borderColor: color,
+                backgroundColor: color + '18',
+                pointBackgroundColor: color,
+                pointRadius: 4,
+                pointHoverRadius: 7,
+                borderDash: dash,
+                tension: 0.35,
+                fill: false,
+                spanGaps: true,
+                _metric: metric,
+                _year: y,
+            });
         });
     });
 
     if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
     body.innerHTML = '<div class="chart-wrap"><canvas id="dynChart"></canvas></div>';
 
+    // Плагін для підписів значень без накладань
+    const datalabelPlugin = {
+        id: 'smartLabels',
+        afterDatasetsDraw(chart) {
+            const ctx = chart.ctx;
+            ctx.save();
+
+            // Збираємо всі позиції точок з їх значеннями
+            const points = [];
+            chart.data.datasets.forEach((ds, di) => {
+                const meta = chart.getDatasetMeta(di);
+                if (meta.hidden) return;
+                ds.data.forEach((val, pi) => {
+                    if (val === null || val === undefined) return;
+                    const el = meta.data[pi];
+                    if (!el) return;
+                    points.push({
+                        x: el.x, y: el.y,
+                        val, color: ds.borderColor,
+                        placed: false, labelY: null,
+                    });
+                });
+            });
+
+            // Групуємо по x (місяць) і розміщуємо підписи без накладань
+            const byX = {};
+            points.forEach(p => {
+                const key = Math.round(p.x);
+                if (!byX[key]) byX[key] = [];
+                byX[key].push(p);
+            });
+
+            const LABEL_H = 13; // висота підпису px
+            const GAP = 2;
+
+            Object.values(byX).forEach(group => {
+                // Сортуємо по Y (зверху вниз)
+                group.sort((a,b) => a.y - b.y);
+
+                // Перший підпис — над точкою
+                group.forEach((p, i) => {
+                    p.labelY = p.y - 8;
+                });
+
+                // Перевіряємо накладання і зсуваємо
+                for (let iter = 0; iter < 10; iter++) {
+                    let changed = false;
+                    for (let i = 1; i < group.length; i++) {
+                        const prev = group[i-1];
+                        const cur  = group[i];
+                        const overlap = (prev.labelY) - (cur.labelY - LABEL_H - GAP);
+                        if (overlap > 0) {
+                            cur.labelY -= overlap + GAP;
+                            changed = true;
+                        }
+                    }
+                    if (!changed) break;
+                }
+
+                // Малюємо підписи
+                group.forEach(p => {
+                    const text = fmtVal(p.val);
+                    ctx.font = '600 9px Inter, sans-serif';
+                    const tw = ctx.measureText(text).width;
+                    const px = p.x - tw/2;
+                    const py = p.labelY;
+
+                    // Фон
+                    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                    ctx.beginPath();
+                    ctx.roundRect(px - 2, py - 9, tw + 4, 11, 3);
+                    ctx.fill();
+
+                    // Текст
+                    ctx.fillStyle = p.color;
+                    ctx.fillText(text, px, py);
+                });
+            });
+
+            ctx.restore();
+        }
+    };
+
     const ctx = document.getElementById('dynChart').getContext('2d');
     chartInstance = new Chart(ctx, {
         type: 'line',
         data: { labels, datasets },
+        plugins: [datalabelPlugin],
         options: {
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
+            layout: { padding: { top: 20 } },
             plugins: {
                 legend: {
                     display: datasets.length > 1,
                     position: 'top',
-                    labels: { font: { family: 'Inter', size: 11 }, boxWidth: 12, padding: 12 }
+                    labels: {
+                        font: { family: 'Inter', size: 10 },
+                        boxWidth: 20, padding: 10,
+                        generateLabels(chart) {
+                            return chart.data.datasets.map((ds, i) => ({
+                                text: ds.label,
+                                fillStyle: ds.borderColor,
+                                strokeStyle: ds.borderColor,
+                                lineWidth: 2,
+                                lineDash: ds.borderDash,
+                                hidden: chart.getDatasetMeta(i).hidden,
+                                datasetIndex: i,
+                            }));
+                        }
+                    }
                 },
                 tooltip: {
                     backgroundColor: '#1d1d1f',
@@ -584,7 +711,7 @@ function renderChart() {
                     bodyFont:  { family: 'Inter', size: 11 },
                     padding: 10,
                     callbacks: {
-                        label: ctx => ` ${ctx.dataset.label}: ${fmtVal(ctx.raw)}`
+                        label: c => ` ${c.dataset.label}: ${fmtVal(c.raw)}`
                     }
                 }
             },
@@ -595,10 +722,7 @@ function renderChart() {
                 },
                 y: {
                     grid: { color: '#f0f0f0' },
-                    ticks: {
-                        font: { family: 'Inter', size: 10 }, color: '#86868b',
-                        callback: v => fmtVal(v)
-                    }
+                    ticks: { font: { family: 'Inter', size: 10 }, color: '#86868b', callback: v => fmtVal(v) }
                 }
             }
         }
@@ -618,24 +742,46 @@ function setView(mode) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// YEAR TABS
+// YEAR TABS — мультивибір
 // ═══════════════════════════════════════════════════════════
 function renderYearTabs() {
     const cont = document.getElementById('yearTabs');
     cont.innerHTML = '';
+
+    // Кнопка "Всі"
+    const btnAll = document.createElement('button');
+    btnAll.className = 'year-tab';
+    btnAll.textContent = 'Всі роки';
+    btnAll.onclick = () => {
+        allYears.forEach(y => selectedYears.add(y));
+        updateYearTabs();
+        renderTable(); renderChips();
+        if (viewMode === 'chart') renderChart();
+    };
+    cont.appendChild(btnAll);
+
     allYears.forEach(y => {
         const btn = document.createElement('button');
-        btn.className = 'year-tab' + (y === selectedYear ? ' active' : '');
+        btn.className = 'year-tab' + (selectedYears.has(y) ? ' active' : '');
+        btn.dataset.year = y;
         btn.textContent = y;
         btn.onclick = () => {
-            selectedYear = y;
-            document.querySelectorAll('.year-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderTable();
-            renderChips();
+            if (selectedYears.has(y)) {
+                if (selectedYears.size > 1) selectedYears.delete(y);
+            } else {
+                selectedYears.add(y);
+            }
+            updateYearTabs();
+            renderTable(); renderChips();
             if (viewMode === 'chart') renderChart();
         };
         cont.appendChild(btn);
+    });
+}
+
+function updateYearTabs() {
+    document.querySelectorAll('.year-tab[data-year]').forEach(btn => {
+        btn.classList.toggle('active', selectedYears.has(+btn.dataset.year));
     });
 }
 
