@@ -711,19 +711,66 @@
                 return { id: i, name, position, initials, gradient, metrics };
             }).filter(Boolean);
 
-            // Якщо є тотал рядок — перенести на початок як "Показники магазину"
+            // Якщо є тотал рядок у таблиці — видалити (ми порахуємо самі)
             const totalIdx = currentData.findIndex(d =>
                 /тотал|total|загалом|показники магазину/i.test(d.name)
             );
-            if (totalIdx > 0) {
-                const [total] = currentData.splice(totalIdx, 1);
-                total.name = 'Показники магазину';
-                total.position = 'Всі продавці';
-                total.initials = 'ALL';
-                total.gradient = 'linear-gradient(135deg, #434343 0%, #000000 100%)';
-                currentData.unshift(total);
+            if (totalIdx >= 0) currentData.splice(totalIdx, 1);
+
+            // --- Розраховуємо "Показники магазину" (ALL) так само як Python-скрипт ---
+            const storeTotals = {
+                id: 0,
+                name: 'Показники магазину',
+                position: 'Всі продавці',
+                initials: 'ALL',
+                gradient: 'linear-gradient(135deg, #434343 0%, #000000 100%)',
+                metrics: {}
+            };
+
+            const allCols = currentData.length ? Object.keys(currentData[0].metrics) : [];
+
+            // Сумуємо не-відсоткові колонки
+            allCols.forEach(col => {
+                if (PERCENT_COLS.includes(col)) return;
+                const sum = currentData.reduce((acc, p) => acc + (p.metrics[col]?.value || 0), 0);
+                const unit = UNIT_COLS.includes(col) ? 'шт' : 'грн';
+                storeTotals.metrics[col] = { value: Math.round(sum * 100) / 100, label: col, unit };
+            });
+
+            // Перераховуємо Ср. Чек, КПЧ, ASP за правильними формулами
+            const totalShт   = storeTotals.metrics['Шт.']?.value  || 0;
+            const totalCheky = storeTotals.metrics['Чеки']?.value || 0;
+            const totalTO    = storeTotals.metrics['ТО']?.value   || 0;
+
+            if (totalCheky > 0) {
+                const srChek = Math.round(totalTO / totalCheky);
+                const kpch   = Math.round(totalShт / totalCheky * 100) / 100;
+                const asp    = kpch > 0 ? Math.round(srChek / kpch) : 0;
+                storeTotals.metrics['Ср. Чек'] = { value: srChek, label: 'Ср. Чек', unit: 'грн' };
+                storeTotals.metrics['КПЧ']     = { value: kpch,   label: 'КПЧ',     unit: 'грн' };
+                storeTotals.metrics['ASP']     = { value: asp,    label: 'ASP',     unit: 'грн' };
             }
 
+            // Розраховуємо відсоткові показники магазину
+            PERCENT_COLS.forEach(col => {
+                let res = 0;
+                if (totalTO > 0) {
+                    if (col === 'Доля Послуг') {
+                        const valCat = storeTotals.metrics['Послуги грн']?.value || storeTotals.metrics['Послуги']?.value || 0;
+                        res = Math.round((valCat / totalTO) * 10000) / 100;
+                    } else if (col === '% Доля ACC') {
+                        const valCat = storeTotals.metrics['ACC']?.value || 0;
+                        res = Math.round((valCat / totalTO) * 10000) / 100;
+                    } else {
+                        // Для решти — середнє арифметичне
+                        const vals = currentData.map(p => p.metrics[col]?.value || 0);
+                        res = vals.length ? Math.round(vals.reduce((a,b) => a+b, 0) / vals.length * 100) / 100 : 0;
+                    }
+                }
+                storeTotals.metrics[col] = { value: res, label: col, unit: '%' };
+            });
+
+            currentData = [storeTotals, ...currentData];
             renderCards(currentData);
         } catch (error) {
             console.error('Помилка завантаження даних з Google Sheets:', error);
