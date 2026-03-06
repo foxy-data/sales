@@ -3,47 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>Звіт по продавцях — Повна версія</title>
+    <title>Звіт по продавцях (Відновлено)</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
         :root{--bg:#f5f5f7;--text:#1d1d1f;--text-sec:#6e6e73;--accent:#0071e3;--border:#d2d2d7;--card:#fff;--shadow:0 4px 20px rgba(0,0,0,.06)}
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);padding:8px 10px 60px}
-
         .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap}
         .back-link{color:var(--accent);text-decoration:none;font-weight:600;font-size:14px}
         .page-title{font-size:20px;font-weight:700}
         .view-toggle{display:flex;gap:4px;background:#e5e5ea;border-radius:10px;padding:3px}
         .view-btn{border:none;background:transparent;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-sec);transition:all .2s}
         .view-btn.active{background:white;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12)}
-
         .filters-wrap{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:10px 14px;margin-bottom:12px}
         .filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0}
-        .filter-row+.filter-row{border-top:1px solid #f2f2f4;margin-top:6px;padding-top:8px}
-        .filter-label{font-size:11px;font-weight:700;color:var(--text-sec);min-width:68px}
+        .filter-label{font-size:11px;font-weight:700;color:var(--text-sec);min-width:70px}
         .pills{display:flex;gap:5px;flex-wrap:wrap}
-        .pill{border:1.5px solid var(--border);background:white;padding:4px 11px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-sec);transition:all .15s}
+        .pill{border:1.5px solid var(--border);background:white;padding:4px 11px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-sec)}
         .pill.active{background:var(--accent);border-color:var(--accent);color:white}
-
         .table-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
         .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
         table{border-collapse:collapse;width:100%}
-        th{text-align:center;padding:8px 6px;color:var(--text-sec);font-size:9px;font-weight:700;text-transform:uppercase;border-bottom:1px solid var(--border);background:#f9f9fb;white-space:nowrap;position:sticky;top:0;z-index:10}
-        td{padding:6px 6px;border-bottom:1px solid #f2f2f4;font-size:10px;text-align:center;white-space:nowrap}
-        .col-fix{position:sticky;left:0;background:white!important;z-index:11;text-align:left!important;font-weight:700;box-shadow:2px 0 5px rgba(0,0,0,0.05);min-width:100px}
-
+        th{padding:10px 8px;color:var(--text-sec);font-size:10px;font-weight:700;background:#f9f9fb;border-bottom:1px solid var(--border);white-space:nowrap}
+        td{padding:8px 8px;border-bottom:1px solid #f2f2f4;font-size:11px;text-align:center}
+        .col-fix{position:sticky;left:0;background:white!important;z-index:10;text-align:left!important;font-weight:700;box-shadow:2px 0 5px rgba(0,0,0,0.05)}
         .rating-panel, .dyn-panel {display:none}
         .visible {display:block}
-
-        .rank-card{background:var(--card);border-radius:12px;padding:10px;display:flex;align-items:center;gap:10px;margin-bottom:6px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-        .rank-bg{position:absolute;left:0;top:0;height:100%;opacity:0.1;z-index:1}
-        .rank-pos{font-weight:800;font-size:16px;min-width:25px;z-index:2}
-        .rank-name{flex:1;font-weight:700;z-index:2}
-        .rank-val{font-weight:800;color:var(--accent);z-index:2}
-
-        .status-box{padding:40px;text-align:center;color:var(--text-sec)}
-        .dyn-chart-card{background:var(--card);border-radius:16px;padding:15px;box-shadow:var(--shadow);height:350px}
+        .status-box{padding:40px;text-align:center;color:var(--text-sec);font-size:14px}
     </style>
 </head>
 <body>
@@ -56,7 +43,6 @@
     <div class="view-toggle">
         <button class="view-btn active" id="btnTable" onclick="setView('table')">📋 Таблиця</button>
         <button class="view-btn" id="btnRating" onclick="setView('rating')">🏆 Рейтинг</button>
-        <button class="view-btn" id="btnDyn" onclick="setView('dyn')">📈 Динаміка</button>
     </div>
 </div>
 
@@ -65,18 +51,16 @@
         <span class="filter-label">📅 Рік</span>
         <div class="pills" id="yearPills"></div>
     </div>
-    <div class="filter-row">
+    <div class="filter-row" style="border-top:1px solid #eee; margin-top:8px; padding-top:8px;">
         <span class="filter-label">📆 Місяць</span>
         <div class="pills" id="monthPills"></div>
-    </div>
-    <div class="filter-row">
-        <span class="filter-label">👤 Продавець</span>
-        <div class="pills" id="sellerPills"></div>
     </div>
 </div>
 
 <div id="tableSection">
-    <div class="table-card" id="tableCard"><div class="status-box">Завантаження...</div></div>
+    <div class="table-card" id="mainContainer">
+        <div class="status-box">Завантаження...</div>
+    </div>
 </div>
 
 <div id="ratingSection" class="rating-panel">
@@ -87,25 +71,15 @@
     <div id="ratingGrid"></div>
 </div>
 
-<div id="dynSection" class="dyn-panel">
-    <div class="filters-wrap">
-        <span class="filter-label">Показник:</span>
-        <div class="pills" id="dynMetricPills"></div>
-    </div>
-    <div class="dyn-chart-card"><canvas id="dynCanvas"></canvas></div>
-</div>
-
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdFA0KeLd--Xe-bZL6XSZl5jGBu9qGi32Q-Vm8G1wFSjh4rL52f2L2poIUq-mgJ779NCjd-w7o9ago/pub?output=csv';
 const MONTHS_UK = ['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
 
 let allData = [];
 let dynamicColumns = [];
-let selYears = new Set(), selMonths = new Set(), selSellers = new Set();
+let selYears = new Set(), selMonths = new Set();
 let activeMetric = '';
-let dynChart = null;
 
-// Парсинг CSV
 function parseCSV(text) {
     const rows = []; let row = [], col = '', inQ = false;
     for (let i = 0; i < text.length; i++) {
@@ -123,159 +97,145 @@ function parseCSV(text) {
 }
 
 function toN(v) {
-    const s = String(v || '').replace(/\s|\u00a0/g, '').replace('%', '').replace(',', '.');
-    const n = parseFloat(s); return isNaN(n) ? 0 : n;
+    if (!v) return 0;
+    const s = String(v).replace(/\s|\u00a0/g, '').replace('%', '').replace(',', '.');
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
 }
 
-function mNum(s) {
-    const lo = (s || '').toLowerCase();
-    const map = {'січ':1,'лют':2,'бер':3,'кві':4,'тра':5,'чер':6,'лип':7,'сер':8,'вер':9,'жов':10,'лис':11,'гру':12};
-    for (const [k, v] of Object.entries(map)) if (lo.startsWith(k)) return v;
-    return 1;
+function getMonthNum(s) {
+    const lo = String(s || '').toLowerCase();
+    if (lo.includes('січ')) return 1; if (lo.includes('лют')) return 2;
+    if (lo.includes('бер')) return 3; if (lo.includes('кві')) return 4;
+    if (lo.includes('тра')) return 5; if (lo.includes('чер')) return 6;
+    if (lo.includes('лип')) return 7; if (lo.includes('сер')) return 8;
+    if (lo.includes('вер')) return 9; if (lo.includes('жов')) return 10;
+    if (lo.includes('лис')) return 11; if (lo.includes('гру')) return 12;
+    const n = parseInt(lo); return isNaN(n) ? 1 : n;
 }
 
 function initData(rows) {
     const header = rows[0].map(h => h.trim());
-    const iY = header.findIndex(h => /рік/i.test(h));
-    const iM = header.findIndex(h => /міс/i.test(h));
-    const iS = header.findIndex(h => /продав|пк/i.test(h));
+    
+    // Гнучкий пошук індексів
+    const iY = header.findIndex(h => /рік|year/i.test(h));
+    const iM = header.findIndex(h => /міс|month/i.test(h));
+    const iS = header.findIndex(h => /продав|пк|seller/i.test(h));
 
-    dynamicColumns = header.filter((h, i) => i !== iY && i !== iM && i !== iS && h !== "");
+    if (iY === -1 || iS === -1) {
+        document.getElementById('mainContainer').innerHTML = `<div class="status-box" style="color:red">Помилка: Не знайдено колонки "Рік" або "Продавець". Перевірте CSV.</div>`;
+        return;
+    }
+
+    // Всі інші колонки стають метриками
+    dynamicColumns = header.filter((h, idx) => idx !== iY && idx !== iM && idx !== iS && h !== "");
     activeMetric = dynamicColumns[0];
 
     allData = rows.slice(1).map(row => {
-        const rec = { y: toN(row[iY]), m: mNum(row[iM]), s: row[iS] };
-        dynamicColumns.forEach(col => rec[col] = toN(row[header.indexOf(col)]));
-        return rec;
-    }).filter(r => r.y > 0 && r.s);
+        const res = { _y: toN(row[iY]), _m: getMonthNum(row[iM]), _s: (row[iS] || '').trim() };
+        dynamicColumns.forEach(col => {
+            const colIdx = header.indexOf(col);
+            res[col] = toN(row[colIdx]);
+        });
+        return res;
+    }).filter(r => r._y > 0 && r._s !== "" && !/підсумок|разом|загальний/i.test(r._s));
 
-    const years = [...new Set(allData.map(r => r.y))].sort((a,b) => b-a);
+    if (allData.length === 0) {
+        document.getElementById('mainContainer').innerHTML = `<div class="status-box">Дані розпізнано, але вони порожні.</div>`;
+        return;
+    }
+
+    const years = [...new Set(allData.map(r => r._y))].sort((a,b) => b-a);
     selYears.add(years[0]);
-    renderFilters();
     updateUI();
 }
 
-function getFiltered() {
-    return allData.filter(r => 
-        selYears.has(r.y) && 
-        (selMonths.size === 0 || selMonths.has(r.m)) &&
-        (selSellers.size === 0 || selSellers.has(r.s))
-    );
+function updateUI() {
+    renderFilters();
+    const mode = document.getElementById('btnTable').classList.contains('active') ? 'table' : 'rating';
+    if (mode === 'table') renderTable(); else renderRating();
+}
+
+function renderFilters() {
+    const years = [...new Set(allData.map(r => r._y))].sort((a,b) => b-a);
+    document.getElementById('yearPills').innerHTML = years.map(y => 
+        `<button class="pill ${selYears.has(y)?'active':''}" onclick="selYears.clear();selYears.add(${y});updateUI()">${y}</button>`
+    ).join('');
+
+    const months = [1,2,3,4,5,6,7,8,9,10,11,12];
+    document.getElementById('monthPills').innerHTML = `<button class="pill ${selMonths.size===0?'active':''}" onclick="selMonths.clear();updateUI()">Всі</button>` + 
+        months.map(m => `<button class="pill ${selMonths.has(m)?'active':''}" onclick="toggleMonth(${m})">${MONTHS_UK[m-1].slice(0,3)}</button>`).join('');
+
+    document.getElementById('metricPills').innerHTML = dynamicColumns.map(c => 
+        `<button class="pill ${activeMetric===c?'active':''}" onclick="activeMetric='${c}';updateUI()">${c}</button>`
+    ).join('');
+}
+
+function toggleMonth(m) {
+    if (selMonths.has(m)) selMonths.delete(m); else selMonths.add(m);
+    updateUI();
 }
 
 function renderTable() {
-    const data = getFiltered();
+    const filtered = allData.filter(r => selYears.has(r._y) && (selMonths.size === 0 || selMonths.has(r._m)));
     const summary = {};
-    data.forEach(r => {
-        if (!summary[r.s]) summary[r.s] = { count: 0, s: r.s };
-        summary[r.s].count++;
-        dynamicColumns.forEach(c => summary[r.s][c] = (summary[r.s][c] || 0) + r[c]);
+    filtered.forEach(r => {
+        if (!summary[r._s]) { summary[r._s] = { count: 0 }; dynamicColumns.forEach(c => summary[r._s][c] = 0); }
+        summary[r._s].count++;
+        dynamicColumns.forEach(c => summary[r._s][c] += r[c]);
     });
 
     let html = `<div class="table-wrap"><table><thead><tr><th class="col-fix">Продавець</th>`;
     dynamicColumns.forEach(c => html += `<th>${c}</th>`);
     html += `</tr></thead><tbody>`;
 
-    Object.values(summary).sort((a,b) => a.s.localeCompare(b.s)).forEach(row => {
-        html += `<tr><td class="col-fix">${row.s}</td>`;
+    Object.keys(summary).sort().forEach(s => {
+        html += `<tr><td class="col-fix">${s}</td>`;
         dynamicColumns.forEach(c => {
-            let v = row[c];
-            if (c.includes('%') || c.includes('Доля')) v /= row.count;
-            html += `<td>${v.toLocaleString('uk-UA', {maximumFractionDigits:2})}</td>`;
+            let val = summary[s][c];
+            if (c.includes('%') || c.includes('Доля')) val /= summary[s].count;
+            html += `<td>${val.toLocaleString('uk-UA', {maximumFractionDigits:1})}</td>`;
         });
         html += `</tr>`;
     });
-    document.getElementById('tableCard').innerHTML = html + `</tbody></table></div>`;
+    document.getElementById('mainContainer').innerHTML = html + `</tbody></table></div>`;
 }
 
 function renderRating() {
-    const data = getFiltered();
+    const filtered = allData.filter(r => selYears.has(r._y) && (selMonths.size === 0 || selMonths.has(r._m)));
     const summary = {};
-    data.forEach(r => {
-        if (!summary[r.s]) summary[r.s] = { v: 0, count: 0, s: r.s };
-        summary[r.s].v += r[activeMetric];
-        summary[r.s].count++;
+    filtered.forEach(r => {
+        if (!summary[r._s]) summary[r._s] = { val: 0, count: 0 };
+        summary[r._s].val += r[activeMetric];
+        summary[r._s].count++;
     });
 
-    const list = Object.values(summary).map(row => {
-        if (activeMetric.includes('%') || activeMetric.includes('Доля')) row.v /= row.count;
-        return row;
+    const list = Object.entries(summary).map(([name, obj]) => {
+        let v = obj.val;
+        if (activeMetric.includes('%') || activeMetric.includes('Доля')) v /= obj.count;
+        return { name, v };
     }).sort((a,b) => b.v - a.v);
 
-    const max = list[0]?.v || 1;
     document.getElementById('ratingGrid').innerHTML = list.map((r, i) => `
-        <div class="rank-card">
-            <div class="rank-bg" style="width:${(r.v/max*100)}%; background:var(--accent)"></div>
-            <div class="rank-pos">${i+1}</div>
-            <div class="rank-name">${r.s}</div>
-            <div class="rank-val">${r.v.toLocaleString()}</div>
+        <div style="background:white; margin:5px 0; padding:10px; border-radius:8px; display:flex; justify-content:space-between; box-shadow:0 2px 5px rgba(0,0,0,0.05)">
+            <span><b>${i+1}.</b> ${r.name}</span>
+            <span style="color:var(--accent); font-weight:700">${r.v.toLocaleString()}</span>
         </div>
     `).join('');
 }
 
-function renderChart() {
-    const ctx = document.getElementById('dynCanvas').getContext('2d');
-    if (dynChart) dynChart.destroy();
-
-    const sellers = [...new Set(getFiltered().map(r => r.s))];
-    const datasets = sellers.map((s, i) => {
-        const sData = allData.filter(r => r.s === s && selYears.has(r.y)).sort((a,b) => a.m - b.m);
-        return {
-            label: s,
-            data: sData.map(r => r[activeMetric]),
-            borderColor: `hsl(${i * 137}, 70%, 50%)`,
-            tension: 0.3
-        };
-    });
-
-    dynChart = new Chart(ctx, {
-        type: 'line',
-        data: { labels: MONTHS_UK, datasets },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-}
-
-function renderFilters() {
-    const years = [...new Set(allData.map(r => r.y))].sort((a,b) => b-a);
-    const sellers = [...new Set(allData.map(r => r.s))].sort();
-
-    const mkPills = (id, list, set, toggle) => {
-        document.getElementById(id).innerHTML = list.map(item => {
-            const label = typeof item === 'number' && id === 'monthPills' ? MONTHS_UK[item-1].slice(0,3) : item;
-            return `<button class="pill ${set.has(item) ? 'active' : ''}" onclick="${toggle}('${item}')">${label}</button>`;
-        }).join('');
-    };
-
-    mkPills('yearPills', years, selYears, 'toggleYear');
-    mkPills('monthPills', [1,2,3,4,5,6,7,8,9,10,11,12], selMonths, 'toggleMonth');
-    mkPills('sellerPills', sellers, selSellers, 'toggleSeller');
-
-    const mHtml = dynamicColumns.map(c => `<button class="pill ${activeMetric === c ? 'active' : ''}" onclick="activeMetric='${c}'; updateUI();">${c}</button>`).join('');
-    document.getElementById('metricPills').innerHTML = mHtml;
-    document.getElementById('dynMetricPills').innerHTML = mHtml;
-}
-
-function toggleYear(y) { selYears.clear(); selYears.add(Number(y)); updateUI(); }
-function toggleMonth(m) { m = Number(m); selMonths.has(m) ? selMonths.delete(m) : selMonths.add(m); updateUI(); }
-function toggleSeller(s) { selSellers.has(s) ? selSellers.delete(s) : selSellers.add(s); updateUI(); }
-
 function setView(v) {
-    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn' + v.charAt(0).toUpperCase() + v.slice(1)).classList.add('active');
-    document.getElementById('tableSection').style.display = v === 'table' ? 'block' : 'none';
-    document.getElementById('ratingSection').className = v === 'rating' ? 'visible' : 'rating-panel';
-    document.getElementById('dynSection').className = v === 'dyn' ? 'visible' : 'dyn-panel';
+    document.getElementById('btnTable').classList.toggle('active', v==='table');
+    document.getElementById('btnRating').classList.toggle('active', v==='rating');
+    document.getElementById('tableSection').style.display = v==='table' ? 'block' : 'none';
+    document.getElementById('ratingSection').className = v==='rating' ? 'visible' : 'rating-panel';
     updateUI();
 }
 
-function updateUI() {
-    renderFilters();
-    renderTable();
-    renderRating();
-    if (document.getElementById('dynSection').classList.contains('visible')) renderChart();
-}
-
-fetch(CSV_URL + '&t=' + Date.now()).then(r => r.text()).then(t => initData(parseCSV(t)));
+fetch(CSV_URL + '&cache=' + Date.now())
+    .then(r => r.text())
+    .then(text => initData(parseCSV(text)))
+    .catch(err => { document.getElementById('mainContainer').innerHTML = '<div class="status-box">Помилка мережі: ' + err.message + '</div>'; });
 </script>
 </body>
 </html>
