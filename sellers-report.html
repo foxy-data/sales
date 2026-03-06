@@ -1,161 +1,228 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seller Report</title>
-
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-<style>
-
-body{
-font-family:Arial;
-background:#f5f6fa;
-margin:20px;
-}
-
-h1{
-margin-bottom:10px;
-}
-
-.filters{
-margin-bottom:15px;
-}
-
-input{
-padding:8px;
-border-radius:8px;
-border:1px solid #ccc;
-}
-
-.table-container{
-overflow-x:auto;
-background:white;
-border-radius:12px;
-box-shadow:0 2px 10px rgba(0,0,0,0.1);
-}
-
-table{
-border-collapse:collapse;
-width:100%;
-min-width:900px;
-}
-
-th,td{
-padding:10px;
-border-bottom:1px solid #eee;
-text-align:left;
-white-space:nowrap;
-}
-
-th{
-background:#fafafa;
-font-weight:600;
-}
-
-tr:hover{
-background:#f1f3f6;
-}
-
-.total{
-font-weight:700;
-background:#fff8e1;
-}
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Звіт по продавцях (Full Data)</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root{--bg:#f5f5f7;--text:#1d1d1f;--text-sec:#6e6e73;--accent:#0071e3;--border:#d2d2d7;--card:#fff;--shadow:0 4px 20px rgba(0,0,0,.06)}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);padding:8px 10px 60px}
+        .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+        .back-link{color:var(--accent);text-decoration:none;font-weight:600;font-size:14px}
+        .page-title{font-size:20px;font-weight:700}
+        .view-toggle{display:flex;gap:4px;background:#e5e5ea;border-radius:10px;padding:3px}
+        .view-btn{border:none;background:transparent;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-sec);transition:all .2s}
+        .view-btn.active{background:white;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+        .filters-wrap{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:10px 14px;margin-bottom:12px}
+        .filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 0}
+        .filter-row+.filter-row{border-top:1px solid #f2f2f4;margin-top:6px;padding-top:8px}
+        .filter-label{font-size:11px;font-weight:700;color:var(--text-sec);min-width:68px}
+        .pills{display:flex;gap:5px;flex-wrap:wrap}
+        .pill{border:1.5px solid var(--border);background:white;padding:4px 11px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-sec);transition:all .15s}
+        .pill.active{background:var(--accent);border-color:var(--accent);color:white}
+        .table-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+        .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+        table{border-collapse:collapse;width:100%}
+        th{text-align:center;padding:10px 8px;color:var(--text-sec);font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:1px solid var(--border);background:#f9f9fb;white-space:nowrap;position:sticky;top:0;z-index:10}
+        td{padding:8px 8px;border-bottom:1px solid #f2f2f4;font-size:11px;text-align:center;white-space:nowrap}
+        .col-fix{position:sticky;left:0;background:white!important;z-index:11;text-align:left!important;font-weight:600;box-shadow:2px 0 5px rgba(0,0,0,0.05);min-width:120px}
+        tr:hover td{background:#f5faff}
+        .status-box{padding:40px;text-align:center;color:var(--text-sec)}
+        .badge{display:inline-block;padding:2px 6px;border-radius:4px;font-weight:600;font-size:10px;background:#f0f0f2}
+    </style>
 </head>
-
 <body>
 
-<h1>Seller Dashboard</h1>
-
-<div class="filters">
-<input id="search" placeholder="Пошук...">
+<div class="top-bar">
+    <div style="display:flex;align-items:center;gap:14px">
+        <a href="index.html" class="back-link">← Назад</a>
+        <div class="page-title">Звіт по продавцях</div>
+    </div>
+    <div class="view-toggle">
+        <button class="view-btn active" id="btnTable" onclick="setView('table')">📋 Таблиця</button>
+    </div>
 </div>
 
-<div class="table-container">
-<table id="table">
-<thead></thead>
-<tbody></tbody>
-</table>
+<div class="filters-wrap">
+    <div class="filter-row">
+        <span class="filter-label">📅 Рік</span>
+        <div class="pills" id="yearPills"></div>
+    </div>
+    <div class="filter-row">
+        <span class="filter-label">📆 Місяць</span>
+        <div class="pills" id="monthPills"></div>
+    </div>
+</div>
+
+<div id="tableSection">
+    <div class="table-card" id="tableCard">
+        <div class="status-box">Завантаження даних...</div>
+    </div>
 </div>
 
 <script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdFA0KeLd--Xe-bZL6XSZl5jGBu9qGi32Q-Vm8G1wFSjh4rL52f2L2poIUq-mgJ779NCjd-w7o9ago/pub?output=csv';
+const MONTHS_UK = ['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
 
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdFA0KeLd--Xe-bZL6XSZl5jGBu9qGi32Q-Vm8G1wFSjh4rL52f2L2poIUq-mgJ779NCjd-w7o9ago/pub?output=csv";
+// Поля для форматування
+const MONEY_FIELDS = ['ТО', 'Ср. Чек', 'ASP', 'Послуги грн', 'ACC', 'AV', 'DIG', 'IT', 'MDA', 'NIP', 'SDA'];
+const PCT_FIELDS = ['Доля%', 'Доля Послуг', '% Доля ACC', 'Конверсія ПК', 'Конверсія ПК Offline', '% УДС'];
 
 let allData = [];
+let dynamicColumns = [];
+let selYears = new Set();
+let selMonths = new Set();
+let allYears = [];
+let allMonths = [];
 
-fetch(CSV_URL)
-.then(res => res.text())
-.then(csv => {
-
-const parsed = Papa.parse(csv,{
-header:true,
-skipEmptyLines:true
-});
-
-allData = parsed.data;
-
-renderTable(allData);
-
-});
-
-function renderTable(data){
-
-const table = document.getElementById("table");
-const thead = table.querySelector("thead");
-const tbody = table.querySelector("tbody");
-
-thead.innerHTML="";
-tbody.innerHTML="";
-
-if(data.length===0) return;
-
-const columns = Object.keys(data[0]);
-
-let headerRow = "<tr>";
-
-columns.forEach(col=>{
-headerRow += `<th>${col}</th>`;
-});
-
-headerRow += "</tr>";
-
-thead.innerHTML = headerRow;
-
-data.forEach(row=>{
-
-let tr = "<tr>";
-
-columns.forEach(col=>{
-tr += `<td>${row[col] ?? ""}</td>`;
-});
-
-tr += "</tr>";
-
-tbody.innerHTML += tr;
-
-});
-
+function parseCSV(text) {
+    const rows = []; let row = [], col = '', inQ = false;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (c === '"' && text[i+1] === '"') { col += '"'; i++; }
+        else if (c === '"') inQ = !inQ;
+        else if (c === ',' && !inQ) { row.push(col.trim()); col = ''; }
+        else if ((c === '\n' || c === '\r') && !inQ) { 
+            if (c === '\r' && text[i+1] === '\n') i++; 
+            row.push(col.trim()); rows.push(row); row = []; col = ''; 
+        } else col += c;
+    }
+    if (col || row.length) { row.push(col.trim()); rows.push(row); }
+    return rows.filter(r => r.length > 1);
 }
 
-document.getElementById("search").addEventListener("input",e=>{
+function toN(v) {
+    if (!v && v !== 0) return 0;
+    const s = String(v).replace(/\s|\u00a0/g, '').replace('%', '').replace(',', '.');
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+}
 
-const value = e.target.value.toLowerCase();
+function mNum(s) {
+    const lo = (s || '').toLowerCase().trim();
+    const map = {'січ':1,'лют':2,'бер':3,'кві':4,'тра':5,'чер':6,'лип':7,'сер':8,'вер':9,'жов':10,'лис':11,'гру':12};
+    for (const [k, v] of Object.entries(map)) if (lo.startsWith(k)) return v;
+    return null;
+}
 
-const filtered = allData.filter(row=>
-Object.values(row).some(v =>
-String(v).toLowerCase().includes(value)
-)
-);
+function parseFull(rows) {
+    if (!rows.length) return;
+    const header = rows[0].map(h => h.trim());
+    
+    // Пошук індексів основних колонок
+    const iYear = header.findIndex(h => /рік|year/i.test(h));
+    const iMonth = header.findIndex(h => /місяць|month|міс/i.test(h));
+    const iSeller = header.findIndex(h => /продавець|seller|пк/i.test(h));
 
-renderTable(filtered);
+    // Решта колонок - це дані (зберігаємо оригінальний порядок)
+    dynamicColumns = header.filter((h, i) => i !== iYear && i !== iMonth && i !== iSeller && h !== "");
 
-});
+    const ySet = new Set(), mSet = new Set();
 
+    rows.slice(1).forEach(row => {
+        const yr = toN(row[iYear]);
+        const mo = mNum(row[iMonth]);
+        const seller = (row[iSeller] || '').trim();
+        
+        if (!yr || !mo || !seller || /загальний|підсумок|разом/i.test(seller)) return;
+
+        ySet.add(yr); mSet.add(mo);
+        
+        const rec = { "Рік": yr, "Місяць": mo, "Продавець": seller };
+        dynamicColumns.forEach(col => {
+            const idx = header.indexOf(col);
+            rec[col] = toN(row[idx]);
+        });
+        allData.push(rec);
+    });
+
+    allYears = [...ySet].sort((a,b) => b-a);
+    allMonths = [...mSet].sort((a,b) => a-b);
+    selYears.add(allYears[0]);
+}
+
+function fmtV(v, col) {
+    if (MONEY_FIELDS.includes(col)) return Math.round(v).toLocaleString('uk-UA');
+    if (PCT_FIELDS.includes(col)) return v.toFixed(2) + '%';
+    return v % 1 !== 0 ? v.toFixed(2) : v.toLocaleString('uk-UA');
+}
+
+function renderTable() {
+    const card = document.getElementById('tableCard');
+    const filtered = allData.filter(r => selYears.has(r["Рік"]) && (selMonths.size === 0 || selMonths.has(r["Місяць"])));
+    
+    // Агрегація по продавцю
+    const summary = {};
+    filtered.forEach(r => {
+        const s = r["Продавець"];
+        if (!summary[s]) {
+            summary[s] = { count: 0 };
+            dynamicColumns.forEach(c => summary[s][c] = 0);
+        }
+        summary[s].count++;
+        dynamicColumns.forEach(c => summary[s][c] += r[c]);
+    });
+
+    let html = `<div class="table-wrap"><table><thead><tr><th class="col-fix">Продавець</th>`;
+    dynamicColumns.forEach(c => html += `<th>${c}</th>`);
+    html += `</tr></thead><tbody>`;
+
+    Object.keys(summary).sort().forEach(s => {
+        html += `<tr><td class="col-fix">${s}</td>`;
+        dynamicColumns.forEach(c => {
+            let val = summary[s][c];
+            if (PCT_FIELDS.includes(c)) val /= summary[s].count; // Середнє для %
+            html += `<td>${fmtV(val, c)}</td>`;
+        });
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+    card.innerHTML = html;
+}
+
+function renderFilters() {
+    const yp = document.getElementById('yearPills');
+    yp.innerHTML = '';
+    allYears.forEach(y => {
+        const b = document.createElement('button');
+        b.className = 'pill' + (selYears.has(y) ? ' active' : '');
+        b.textContent = y;
+        b.onclick = () => { selYears.clear(); selYears.add(y); updateUI(); };
+        yp.appendChild(b);
+    });
+
+    const mp = document.getElementById('monthPills');
+    mp.innerHTML = '<button class="pill ' + (selMonths.size === 0 ? 'active' : '') + '" onclick="selMonths.clear(); updateUI();">Всі</button>';
+    allMonths.forEach(m => {
+        const b = document.createElement('button');
+        b.className = 'pill' + (selMonths.has(m) ? ' active' : '');
+        b.textContent = MONTHS_UK[m-1].slice(0,3);
+        b.onclick = () => { selMonths.has(m) ? selMonths.delete(m) : selMonths.add(m); updateUI(); };
+        mp.appendChild(b);
+    });
+}
+
+function updateUI() {
+    renderFilters();
+    renderTable();
+}
+
+async function init() {
+    try {
+        const res = await fetch(CSV_URL + '&cache=' + Date.now());
+        const text = await res.text();
+        parseFull(parseCSV(text));
+        updateUI();
+    } catch (e) {
+        document.getElementById('tableCard').innerHTML = '<div class="status-box">Помилка завантаження: ' + e.message + '</div>';
+    }
+}
+
+init();
 </script>
-
 </body>
 </html>
