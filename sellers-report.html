@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Звіт по продавцях</title>
+<title>Seller Analytics</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,8 +13,8 @@
 
 body{
 font-family:Inter,sans-serif;
-background:#f5f5f7;
-margin:10px;
+background:#f5f6fa;
+margin:12px;
 color:#1d1d1f;
 }
 
@@ -26,7 +26,7 @@ margin-bottom:8px;
 display:flex;
 gap:8px;
 flex-wrap:wrap;
-margin-bottom:10px;
+margin-bottom:12px;
 }
 
 select{
@@ -34,6 +34,30 @@ padding:6px 10px;
 border-radius:8px;
 border:1px solid #ccc;
 font-size:12px;
+}
+
+.kpi-grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:10px;
+margin-bottom:14px;
+}
+
+.kpi{
+background:white;
+padding:10px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,.06);
+}
+
+.kpi-title{
+font-size:11px;
+color:#777;
+}
+
+.kpi-value{
+font-size:20px;
+font-weight:600;
 }
 
 .table-card{
@@ -58,9 +82,9 @@ white-space:nowrap;
 
 th{
 background:#fafafa;
-font-weight:600;
 position:sticky;
 top:0;
+font-weight:600;
 }
 
 .col-fix{
@@ -79,7 +103,6 @@ box-shadow:0 2px 10px rgba(0,0,0,.06);
 margin-bottom:6px;
 display:flex;
 justify-content:space-between;
-font-size:13px;
 }
 
 .section{
@@ -88,6 +111,10 @@ margin-top:18px;
 
 canvas{
 max-height:300px;
+}
+
+.pivot-table{
+margin-top:10px;
 }
 
 </style>
@@ -107,16 +134,54 @@ max-height:300px;
 
 </div>
 
+<div class="kpi-grid">
+
+<div class="kpi">
+<div class="kpi-title">Сума</div>
+<div class="kpi-value" id="kpiTotal"></div>
+</div>
+
+<div class="kpi">
+<div class="kpi-title">Середнє</div>
+<div class="kpi-value" id="kpiAvg"></div>
+</div>
+
+<div class="kpi">
+<div class="kpi-title">Записи</div>
+<div class="kpi-value" id="kpiRows"></div>
+</div>
+
+<div class="kpi">
+<div class="kpi-title">Продавці</div>
+<div class="kpi-value" id="kpiSellers"></div>
+</div>
+
+</div>
+
 <div class="table-card" id="tableSection"></div>
 
 <div class="section">
-<h3>Рейтинг</h3>
-<div id="rankingGrid"></div>
+
+<h3>Pivot (по продавцю)</h3>
+
+<div class="table-card pivot-table" id="pivotSection"></div>
+
 </div>
 
 <div class="section">
+
+<h3>Рейтинг</h3>
+
+<div id="rankingGrid"></div>
+
+</div>
+
+<div class="section">
+
 <h3>Динаміка</h3>
+
 <canvas id="dynChart"></canvas>
+
 </div>
 
 <script>
@@ -169,17 +234,17 @@ renderAll()
 
 function buildFilters(){
 
-const sellerSet=new Set()
+const sellers=new Set()
 
 rawData.forEach(r=>{
-if(r["Продавець"]) sellerSet.add(r["Продавець"])
+if(r["Продавець"]) sellers.add(r["Продавець"])
 })
 
 const sellerSelect=document.getElementById("sellerFilter")
 
 sellerSelect.innerHTML='<option value="">Всі продавці</option>'
 
-sellerSet.forEach(s=>{
+sellers.forEach(s=>{
 sellerSelect.innerHTML+=`<option value="${s}">${s}</option>`
 })
 
@@ -188,13 +253,8 @@ const metricSelect=document.getElementById("metricSelect")
 metricSelect.innerHTML=""
 
 columns.forEach(c=>{
-
-if(c!=="Продавець" && c!=="Місяць"){
-
+if(c!=="Продавець" && c!=="Місяць")
 metricSelect.innerHTML+=`<option value="${c}">${c}</option>`
-
-}
-
 })
 
 }
@@ -217,9 +277,32 @@ renderAll()
 
 function renderAll(){
 
+renderKPI()
 renderTable()
+renderPivot()
 renderRanking()
 renderChart()
+
+}
+
+function renderKPI(){
+
+const metric=document.getElementById("metricSelect").value
+
+let total=0
+
+filtered.forEach(r=>{
+total+=num(r[metric])
+})
+
+const avg=total/filtered.length
+
+const sellers=new Set(filtered.map(r=>r["Продавець"]))
+
+document.getElementById("kpiTotal").innerText=Math.round(total)
+document.getElementById("kpiAvg").innerText=Math.round(avg)
+document.getElementById("kpiRows").innerText=filtered.length
+document.getElementById("kpiSellers").innerText=sellers.size
 
 }
 
@@ -227,56 +310,73 @@ function renderTable(){
 
 const container=document.getElementById("tableSection")
 
-const table=document.createElement("table")
-
-const thead=document.createElement("thead")
-const tbody=document.createElement("tbody")
-
-const trh=document.createElement("tr")
+let html="<table><thead><tr>"
 
 columns.forEach((c,i)=>{
 
-const th=document.createElement("th")
-
-th.textContent=c
-
-if(i==0) th.className="col-fix"
-
-trh.appendChild(th)
+if(i==0)
+html+=`<th class="col-fix">${c}</th>`
+else
+html+=`<th>${c}</th>`
 
 })
 
-thead.appendChild(trh)
-
-const fragment=document.createDocumentFragment()
+html+="</tr></thead><tbody>"
 
 filtered.forEach(r=>{
 
-const tr=document.createElement("tr")
+html+="<tr>"
 
 columns.forEach((c,i)=>{
 
-const td=document.createElement("td")
-
-td.textContent=r[c] || ""
-
-if(i==0) td.className="col-fix"
-
-tr.appendChild(td)
+if(i==0)
+html+=`<td class="col-fix">${r[c]||""}</td>`
+else
+html+=`<td>${r[c]||""}</td>`
 
 })
 
-fragment.appendChild(tr)
+html+="</tr>"
 
 })
 
-tbody.appendChild(fragment)
+html+="</tbody></table>"
 
-table.appendChild(thead)
-table.appendChild(tbody)
+container.innerHTML=html
 
-container.innerHTML=""
-container.appendChild(table)
+}
+
+function renderPivot(){
+
+const metric=document.getElementById("metricSelect").value
+
+let map={}
+
+filtered.forEach(r=>{
+
+let seller=r["Продавець"]
+let val=num(r[metric])
+
+if(!map[seller]) map[seller]=0
+
+map[seller]+=val
+
+})
+
+let html="<table><thead><tr><th>Продавець</th><th>"+metric+"</th></tr></thead><tbody>"
+
+Object.entries(map).forEach(r=>{
+
+html+=`<tr>
+<td>${r[0]}</td>
+<td>${Math.round(r[1])}</td>
+</tr>`
+
+})
+
+html+="</tbody></table>"
+
+document.getElementById("pivotSection").innerHTML=html
 
 }
 
@@ -288,11 +388,8 @@ let map={}
 
 filtered.forEach(r=>{
 
-const seller=r["Продавець"]
-
-const val=num(r[metric])
-
-if(!seller) return
+let seller=r["Продавець"]
+let val=num(r[metric])
 
 if(!map[seller]) map[seller]=0
 
@@ -329,11 +426,8 @@ let map={}
 
 filtered.forEach(r=>{
 
-const m=r["Місяць"]
-
-const val=num(r[metric])
-
-if(!m) return
+let m=r["Місяць"]
+let val=num(r[metric])
 
 if(!map[m]) map[m]=0
 
@@ -354,13 +448,6 @@ label:metric,
 data:Object.values(map),
 tension:0.3
 }]
-},
-
-options:{
-responsive:true,
-plugins:{
-legend:{display:false}
-}
 }
 
 })
