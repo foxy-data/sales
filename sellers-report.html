@@ -54,7 +54,7 @@
     /* BI FILTERS */
     .filters-wrap{
         background:var(--card);border-radius:14px;box-shadow:var(--shadow);
-        padding:0;margin-bottom:12px;overflow:hidden;
+        padding:0;margin-bottom:12px;overflow:visible;
         display:flex;align-items:stretch;flex-wrap:wrap;
         border:1px solid rgba(0,0,0,0.06);
     }
@@ -63,16 +63,35 @@
         padding:8px 12px;
         border-right:1px solid #f0f0f2;
         flex-shrink:0;
+        /* на маленьких екранах — перенос із повним рядком */
     }
     .filter-group:last-child{border-right:none}
-    /* група з продавцями або місяцями — розтягується */
-    .filter-group.filter-flex{flex:1;min-width:0;border-right:none}
+    /* група Рік — мінімальна */
+    .filter-group:nth-child(1){flex-shrink:0}
+    /* група Місяць — може трохи рости */
+    .filter-group:nth-child(2){flex-shrink:0}
+    /* група Продавець — займає весь вільний простір, при переносі — повний рядок */
+    .filter-group.filter-flex{
+        flex:1 1 auto;
+        min-width:200px;       /* якщо менше — переноситься на новий рядок */
+        border-right:none;
+        border-top:0;
+    }
+    /* якщо перенеслась на новий рядок — показати розділювач зверху */
+    @media (max-width: 700px) {
+        .filter-group.filter-flex{
+            border-top:1px solid #f0f0f2;
+            flex-basis:100%;
+        }
+        .filter-group{border-right:1px solid #f0f0f2}
+        .filter-group:nth-child(2){border-right:none}
+    }
     .filter-row{display:contents}
     .filter-label{
         font-size:10px;font-weight:700;color:#a0a0ab;
         text-transform:uppercase;letter-spacing:.06em;
         white-space:nowrap;margin-right:8px;user-select:none;
-        padding-top:5px;
+        padding-top:5px;flex-shrink:0;
     }
     .pills{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
     .pill{
