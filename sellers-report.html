@@ -1,90 +1,93 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Seller Analytics</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Звіт продавців</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
 body{
 font-family:Inter,sans-serif;
-background:#f5f6fa;
-margin:12px;
-color:#1d1d1f;
+background:#f4f6fb;
+margin:20px;
+color:#1f2937;
 }
 
-h2{
-margin-bottom:8px;
+h1{
+margin-bottom:15px;
+}
+
+.tabs{
+display:flex;
+gap:10px;
+margin-bottom:15px;
+}
+
+.tab{
+padding:8px 14px;
+border-radius:10px;
+background:#e5e7eb;
+cursor:pointer;
+font-size:13px;
+}
+
+.tab.active{
+background:#2563eb;
+color:white;
 }
 
 .filters{
 display:flex;
-gap:8px;
-flex-wrap:wrap;
-margin-bottom:12px;
-}
-
-select{
-padding:6px 10px;
-border-radius:8px;
-border:1px solid #ccc;
-font-size:12px;
-}
-
-.kpi-grid{
-display:grid;
-grid-template-columns:repeat(4,1fr);
 gap:10px;
-margin-bottom:14px;
+flex-wrap:wrap;
+margin-bottom:15px;
 }
 
-.kpi{
+select,input{
+padding:8px;
+border-radius:8px;
+border:1px solid #d1d5db;
+font-size:13px;
+}
+
+.card{
 background:white;
-padding:10px;
-border-radius:10px;
-box-shadow:0 2px 10px rgba(0,0,0,.06);
+padding:15px;
+border-radius:12px;
+box-shadow:0 4px 12px rgba(0,0,0,0.05);
 }
 
-.kpi-title{
-font-size:11px;
-color:#777;
-}
-
-.kpi-value{
-font-size:20px;
-font-weight:600;
-}
-
-.table-card{
-background:white;
-border-radius:14px;
+.table-container{
 overflow:auto;
-box-shadow:0 4px 16px rgba(0,0,0,.08);
 }
 
 table{
 border-collapse:collapse;
-min-width:1000px;
+width:100%;
+min-width:900px;
 }
 
 th,td{
-padding:6px 8px;
-font-size:11px;
+padding:8px;
 border-bottom:1px solid #eee;
+font-size:12px;
 text-align:center;
 white-space:nowrap;
 }
 
 th{
-background:#fafafa;
+background:#f9fafb;
+font-weight:600;
 position:sticky;
 top:0;
-font-weight:600;
 }
 
 .col-fix{
@@ -96,35 +99,39 @@ text-align:left;
 }
 
 .rank-card{
-background:white;
-padding:8px 12px;
-border-radius:10px;
-box-shadow:0 2px 10px rgba(0,0,0,.06);
-margin-bottom:6px;
 display:flex;
 justify-content:space-between;
+padding:8px 10px;
+border-bottom:1px solid #eee;
 }
 
-.section{
-margin-top:18px;
+.hidden{
+display:none;
 }
 
 canvas{
-max-height:300px;
-}
-
-.pivot-table{
-margin-top:10px;
+max-height:350px;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<h2>Звіт по продавцях</h2>
+<h1>Звіт по продавцях</h1>
+
+<div class="tabs">
+
+<div class="tab active" data-tab="table">Таблиця</div>
+<div class="tab" data-tab="ranking">Рейтинг</div>
+<div class="tab" data-tab="chart">Динаміка</div>
+
+</div>
 
 <div class="filters">
+
+<input id="searchInput" placeholder="Пошук">
 
 <select id="sellerFilter">
 <option value="">Всі продавці</option>
@@ -134,54 +141,16 @@ margin-top:10px;
 
 </div>
 
-<div class="kpi-grid">
-
-<div class="kpi">
-<div class="kpi-title">Сума</div>
-<div class="kpi-value" id="kpiTotal"></div>
+<div id="tableTab" class="card">
+<div class="table-container" id="tableSection"></div>
 </div>
 
-<div class="kpi">
-<div class="kpi-title">Середнє</div>
-<div class="kpi-value" id="kpiAvg"></div>
-</div>
-
-<div class="kpi">
-<div class="kpi-title">Записи</div>
-<div class="kpi-value" id="kpiRows"></div>
-</div>
-
-<div class="kpi">
-<div class="kpi-title">Продавці</div>
-<div class="kpi-value" id="kpiSellers"></div>
-</div>
-
-</div>
-
-<div class="table-card" id="tableSection"></div>
-
-<div class="section">
-
-<h3>Pivot (по продавцю)</h3>
-
-<div class="table-card pivot-table" id="pivotSection"></div>
-
-</div>
-
-<div class="section">
-
-<h3>Рейтинг</h3>
-
+<div id="rankingTab" class="card hidden">
 <div id="rankingGrid"></div>
-
 </div>
 
-<div class="section">
-
-<h3>Динаміка</h3>
-
+<div id="chartTab" class="card hidden">
 <canvas id="dynChart"></canvas>
-
 </div>
 
 <script>
@@ -195,11 +164,7 @@ let chart
 
 function num(v){
 if(!v) return 0
-return parseFloat(
-v.toString()
-.replace(/\s/g,'')
-.replace(',','.')
-) || 0
+return parseFloat(v.toString().replace(/\s/g,'').replace(',','.'))||0
 }
 
 async function loadData(){
@@ -207,23 +172,13 @@ async function loadData(){
 const res=await fetch(CSV_URL)
 const csv=await res.text()
 
-const rows=csv.split("\n").map(r=>r.split(","))
-
-columns=rows[0]
-
-rawData=[]
-
-for(let i=1;i<rows.length;i++){
-
-let obj={}
-
-columns.forEach((c,j)=>{
-obj[c]=rows[i][j]
+const parsed=Papa.parse(csv,{
+header:true,
+skipEmptyLines:true
 })
 
-rawData.push(obj)
-
-}
+rawData=parsed.data
+columns=Object.keys(rawData[0])
 
 filtered=[...rawData]
 
@@ -262,12 +217,17 @@ metricSelect.innerHTML+=`<option value="${c}">${c}</option>`
 function applyFilters(){
 
 const seller=document.getElementById("sellerFilter").value
+const search=document.getElementById("searchInput").value.toLowerCase()
 
 filtered=rawData.filter(r=>{
 
-if(!seller) return true
+if(seller && r["Продавець"]!==seller) return false
 
-return r["Продавець"]===seller
+if(search){
+return Object.values(r).join(" ").toLowerCase().includes(search)
+}
+
+return true
 
 })
 
@@ -277,38 +237,13 @@ renderAll()
 
 function renderAll(){
 
-renderKPI()
 renderTable()
-renderPivot()
 renderRanking()
 renderChart()
 
 }
 
-function renderKPI(){
-
-const metric=document.getElementById("metricSelect").value
-
-let total=0
-
-filtered.forEach(r=>{
-total+=num(r[metric])
-})
-
-const avg=total/filtered.length
-
-const sellers=new Set(filtered.map(r=>r["Продавець"]))
-
-document.getElementById("kpiTotal").innerText=Math.round(total)
-document.getElementById("kpiAvg").innerText=Math.round(avg)
-document.getElementById("kpiRows").innerText=filtered.length
-document.getElementById("kpiSellers").innerText=sellers.size
-
-}
-
 function renderTable(){
-
-const container=document.getElementById("tableSection")
 
 let html="<table><thead><tr>"
 
@@ -329,10 +264,12 @@ html+="<tr>"
 
 columns.forEach((c,i)=>{
 
+let val=r[c]||""
+
 if(i==0)
-html+=`<td class="col-fix">${r[c]||""}</td>`
+html+=`<td class="col-fix">${val}</td>`
 else
-html+=`<td>${r[c]||""}</td>`
+html+=`<td>${val}</td>`
 
 })
 
@@ -342,41 +279,7 @@ html+="</tr>"
 
 html+="</tbody></table>"
 
-container.innerHTML=html
-
-}
-
-function renderPivot(){
-
-const metric=document.getElementById("metricSelect").value
-
-let map={}
-
-filtered.forEach(r=>{
-
-let seller=r["Продавець"]
-let val=num(r[metric])
-
-if(!map[seller]) map[seller]=0
-
-map[seller]+=val
-
-})
-
-let html="<table><thead><tr><th>Продавець</th><th>"+metric+"</th></tr></thead><tbody>"
-
-Object.entries(map).forEach(r=>{
-
-html+=`<tr>
-<td>${r[0]}</td>
-<td>${Math.round(r[1])}</td>
-</tr>`
-
-})
-
-html+="</tbody></table>"
-
-document.getElementById("pivotSection").innerHTML=html
+document.getElementById("tableSection").innerHTML=html
 
 }
 
@@ -388,18 +291,15 @@ let map={}
 
 filtered.forEach(r=>{
 
-let seller=r["Продавець"]
-let val=num(r[metric])
+const seller=r["Продавець"]
+const val=num(r[metric])
 
 if(!map[seller]) map[seller]=0
-
 map[seller]+=val
 
 })
 
-const arr=Object.entries(map)
-.sort((a,b)=>b[1]-a[1])
-.slice(0,10)
+const arr=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,10)
 
 let html=""
 
@@ -426,11 +326,10 @@ let map={}
 
 filtered.forEach(r=>{
 
-let m=r["Місяць"]
-let val=num(r[metric])
+const m=r["Місяць"]
+const val=num(r[metric])
 
 if(!map[m]) map[m]=0
-
 map[m]+=val
 
 })
@@ -455,7 +354,27 @@ tension:0.3
 }
 
 document.getElementById("sellerFilter").addEventListener("change",applyFilters)
+document.getElementById("searchInput").addEventListener("input",applyFilters)
 document.getElementById("metricSelect").addEventListener("change",renderAll)
+
+document.querySelectorAll(".tab").forEach(tab=>{
+
+tab.onclick=()=>{
+
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
+tab.classList.add("active")
+
+document.getElementById("tableTab").classList.add("hidden")
+document.getElementById("rankingTab").classList.add("hidden")
+document.getElementById("chartTab").classList.add("hidden")
+
+if(tab.dataset.tab==="table") document.getElementById("tableTab").classList.remove("hidden")
+if(tab.dataset.tab==="ranking") document.getElementById("rankingTab").classList.remove("hidden")
+if(tab.dataset.tab==="chart") document.getElementById("chartTab").classList.remove("hidden")
+
+}
+
+})
 
 loadData()
 
