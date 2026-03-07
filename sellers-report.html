@@ -1,13 +1,8 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>Звіт продавців</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Sellers Report</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,370 +10,249 @@
 <style>
 
 body{
-font-family:Inter,sans-serif;
-background:#f4f6fb;
+font-family:system-ui;
+background:#f5f7fb;
 margin:20px;
-color:#1f2937;
 }
 
 h1{
-margin-bottom:15px;
+margin-bottom:10px;
 }
 
-.tabs{
-display:flex;
-gap:10px;
-margin-bottom:15px;
-}
-
-.tab{
-padding:8px 14px;
-border-radius:10px;
-background:#e5e7eb;
-cursor:pointer;
-font-size:13px;
-}
-
-.tab.active{
-background:#2563eb;
-color:white;
-}
-
-.filters{
+.panel{
 display:flex;
 gap:10px;
 flex-wrap:wrap;
-margin-bottom:15px;
+margin-bottom:20px;
 }
 
-select,input{
-padding:8px;
-border-radius:8px;
-border:1px solid #d1d5db;
-font-size:13px;
-}
-
-.card{
-background:white;
-padding:15px;
-border-radius:12px;
-box-shadow:0 4px 12px rgba(0,0,0,0.05);
-}
-
-.table-container{
-overflow:auto;
+select{
+padding:6px 10px;
+border-radius:6px;
+border:1px solid #ccc;
 }
 
 table{
 border-collapse:collapse;
 width:100%;
-min-width:900px;
+background:white;
 }
 
 th,td{
-padding:8px;
-border-bottom:1px solid #eee;
-font-size:12px;
-text-align:center;
-white-space:nowrap;
+border:1px solid #e6e6e6;
+padding:6px;
+text-align:right;
 }
 
 th{
-background:#f9fafb;
-font-weight:600;
-position:sticky;
-top:0;
+background:#fafafa;
+text-align:center;
 }
 
-.col-fix{
-position:sticky;
-left:0;
-background:white;
-font-weight:600;
+td:first-child,
+th:first-child{
 text-align:left;
 }
 
-.rank-card{
-display:flex;
-justify-content:space-between;
-padding:8px 10px;
-border-bottom:1px solid #eee;
-}
-
-.hidden{
-display:none;
-}
-
 canvas{
-max-height:350px;
+background:white;
+margin-top:20px;
+padding:10px;
+border-radius:10px;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<h1>Звіт по продавцях</h1>
+<h1>Sellers dashboard</h1>
 
-<div class="tabs">
-
-<div class="tab active" data-tab="table">Таблиця</div>
-<div class="tab" data-tab="ranking">Рейтинг</div>
-<div class="tab" data-tab="chart">Динаміка</div>
-
-</div>
-
-<div class="filters">
-
-<input id="searchInput" placeholder="Пошук">
+<div class="panel">
 
 <select id="sellerFilter">
 <option value="">Всі продавці</option>
 </select>
 
-<select id="metricSelect"></select>
+<select id="yearFilter">
+<option value="">Всі роки</option>
+</select>
+
+<select id="monthFilter">
+<option value="">Всі місяці</option>
+</select>
 
 </div>
 
-<div id="tableTab" class="card">
-<div class="table-container" id="tableSection"></div>
-</div>
+<canvas id="chart" height="120"></canvas>
 
-<div id="rankingTab" class="card hidden">
-<div id="rankingGrid"></div>
-</div>
-
-<div id="chartTab" class="card hidden">
-<canvas id="dynChart"></canvas>
-</div>
+<table id="table"></table>
 
 <script>
 
-const CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vTdFA0KeLd--Xe-bZL6XSZl5jGBu9qGi32Q-Vm8G1wFSjh4rL52f2L2poIUq-mgJ779NCjd-w7o9ago/pub?output=csv"
+const CSV_URL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vTdFA0KeLd--Xe-bZL6XSZl5jGBu9qGi32Q-Vm8G1wFSjh4rL52f2L2poIUq-mgJ779NCjd-w7o9ago/pub?output=csv";
 
-let rawData=[]
-let filtered=[]
-let columns=[]
-let chart
-
-function num(v){
-if(!v) return 0
-return parseFloat(v.toString().replace(/\s/g,'').replace(',','.'))||0
-}
+let rawData=[];
+let metrics=[];
 
 async function loadData(){
 
-const res=await fetch(CSV_URL)
-const csv=await res.text()
+const res = await fetch(CSV_URL);
+const csv = await res.text();
 
-const parsed=Papa.parse(csv,{
-header:true,
+const parsed = Papa.parse(csv,{
 skipEmptyLines:true
-})
+});
 
-rawData=parsed.data
-columns=Object.keys(rawData[0])
+const rows = parsed.data;
 
-filtered=[...rawData]
+const header = rows[0];
 
-buildFilters()
-renderAll()
+metrics = header.slice(3);
 
-}
+rawData = rows.slice(1).map(r=>{
 
-function buildFilters(){
+return{
+year:r[0],
+month:r[1],
+seller:r[2],
+values:r.slice(3).map(v=>Number(v)||0)
+};
 
-const sellers=new Set()
+});
 
-rawData.forEach(r=>{
-if(r["Продавець"]) sellers.add(r["Продавець"])
-})
-
-const sellerSelect=document.getElementById("sellerFilter")
-
-sellerSelect.innerHTML='<option value="">Всі продавці</option>'
-
-sellers.forEach(s=>{
-sellerSelect.innerHTML+=`<option value="${s}">${s}</option>`
-})
-
-const metricSelect=document.getElementById("metricSelect")
-
-metricSelect.innerHTML=""
-
-columns.forEach(c=>{
-if(c!=="Продавець" && c!=="Місяць")
-metricSelect.innerHTML+=`<option value="${c}">${c}</option>`
-})
+initFilters();
+render();
 
 }
 
-function applyFilters(){
+function initFilters(){
 
-const seller=document.getElementById("sellerFilter").value
-const search=document.getElementById("searchInput").value.toLowerCase()
+const sellers=[...new Set(rawData.map(d=>d.seller))];
+const years=[...new Set(rawData.map(d=>d.year))];
+const months=[...new Set(rawData.map(d=>d.month))];
 
-filtered=rawData.filter(r=>{
+const s=document.getElementById("sellerFilter");
+const y=document.getElementById("yearFilter");
+const m=document.getElementById("monthFilter");
 
-if(seller && r["Продавець"]!==seller) return false
+sellers.forEach(v=>{
+const o=document.createElement("option");
+o.value=v;
+o.textContent=v;
+s.appendChild(o);
+});
 
-if(search){
-return Object.values(r).join(" ").toLowerCase().includes(search)
-}
+years.forEach(v=>{
+const o=document.createElement("option");
+o.value=v;
+o.textContent=v;
+y.appendChild(o);
+});
 
-return true
+months.forEach(v=>{
+const o=document.createElement("option");
+o.value=v;
+o.textContent=v;
+m.appendChild(o);
+});
 
-})
-
-renderAll()
-
-}
-
-function renderAll(){
-
-renderTable()
-renderRanking()
-renderChart()
-
-}
-
-function renderTable(){
-
-let html="<table><thead><tr>"
-
-columns.forEach((c,i)=>{
-
-if(i==0)
-html+=`<th class="col-fix">${c}</th>`
-else
-html+=`<th>${c}</th>`
-
-})
-
-html+="</tr></thead><tbody>"
-
-filtered.forEach(r=>{
-
-html+="<tr>"
-
-columns.forEach((c,i)=>{
-
-let val=r[c]||""
-
-if(i==0)
-html+=`<td class="col-fix">${val}</td>`
-else
-html+=`<td>${val}</td>`
-
-})
-
-html+="</tr>"
-
-})
-
-html+="</tbody></table>"
-
-document.getElementById("tableSection").innerHTML=html
+[s,y,m].forEach(el=>el.addEventListener("change",render));
 
 }
 
-function renderRanking(){
+function getFiltered(){
 
-const metric=document.getElementById("metricSelect").value
+const s=document.getElementById("sellerFilter").value;
+const y=document.getElementById("yearFilter").value;
+const m=document.getElementById("monthFilter").value;
 
-let map={}
+return rawData.filter(d=>
 
-filtered.forEach(r=>{
+(!s||d.seller===s)&&
+(!y||d.year===y)&&
+(!m||d.month===m)
 
-const seller=r["Продавець"]
-const val=num(r[metric])
-
-if(!map[seller]) map[seller]=0
-map[seller]+=val
-
-})
-
-const arr=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,10)
-
-let html=""
-
-arr.forEach((r,i)=>{
-
-html+=`
-<div class="rank-card">
-<div>${i+1}. ${r[0]}</div>
-<div>${Math.round(r[1])}</div>
-</div>
-`
-
-})
-
-document.getElementById("rankingGrid").innerHTML=html
+);
 
 }
 
-function renderChart(){
+function buildTable(data){
 
-const metric=document.getElementById("metricSelect").value
+const table=document.getElementById("table");
 
-let map={}
+let html="<tr>";
 
-filtered.forEach(r=>{
+html+="<th>Seller</th>";
 
-const m=r["Місяць"]
-const val=num(r[metric])
+metrics.forEach(m=>{
+html+="<th>"+m+"</th>";
+});
 
-if(!map[m]) map[m]=0
-map[m]+=val
+html+="</tr>";
 
-})
+data.forEach(d=>{
 
-if(chart) chart.destroy()
+html+="<tr>";
 
-chart=new Chart(document.getElementById("dynChart"),{
+html+="<td>"+d.seller+"</td>";
 
-type:"line",
+d.values.forEach(v=>{
+html+="<td>"+v+"</td>";
+});
 
+html+="</tr>";
+
+});
+
+table.innerHTML=html;
+
+}
+
+let chart;
+
+function buildChart(data){
+
+const sums=new Array(metrics.length).fill(0);
+
+data.forEach(d=>{
+d.values.forEach((v,i)=>sums[i]+=v);
+});
+
+const ctx=document.getElementById("chart");
+
+if(chart) chart.destroy();
+
+chart=new Chart(ctx,{
+type:"bar",
 data:{
-labels:Object.keys(map),
+labels:metrics,
 datasets:[{
-label:metric,
-data:Object.values(map),
-tension:0.3
+label:"Total",
+data:sums
 }]
+},
+options:{
+responsive:true,
+plugins:{
+legend:{display:false}
 }
-
-})
-
 }
-
-document.getElementById("sellerFilter").addEventListener("change",applyFilters)
-document.getElementById("searchInput").addEventListener("input",applyFilters)
-document.getElementById("metricSelect").addEventListener("change",renderAll)
-
-document.querySelectorAll(".tab").forEach(tab=>{
-
-tab.onclick=()=>{
-
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
-tab.classList.add("active")
-
-document.getElementById("tableTab").classList.add("hidden")
-document.getElementById("rankingTab").classList.add("hidden")
-document.getElementById("chartTab").classList.add("hidden")
-
-if(tab.dataset.tab==="table") document.getElementById("tableTab").classList.remove("hidden")
-if(tab.dataset.tab==="ranking") document.getElementById("rankingTab").classList.remove("hidden")
-if(tab.dataset.tab==="chart") document.getElementById("chartTab").classList.remove("hidden")
+});
 
 }
 
-})
+function render(){
 
-loadData()
+const data=getFiltered();
 
-setInterval(loadData,300000)
+buildTable(data);
+buildChart(data);
+
+}
+
+loadData();
 
 </script>
 
