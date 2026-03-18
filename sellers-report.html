@@ -951,6 +951,26 @@ function renderRating(){
         scored.sort((a,b)=>m.higher?b.val-a.val:a.val-b.val);
         const maxVal=scored[0]?.val||1;
 
+        // ── ШАПКА: загальне + середнє ──
+        const totalSum = scored.reduce((s,x)=>s+x.val,0);
+        const avgVal   = totalSum / scored.length;
+
+        const banner = document.createElement('div');
+        banner.style.cssText=`background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1.5px solid ${m.color}33;padding:10px 14px;margin-bottom:4px;display:flex;gap:0;`;
+        const mkStat=(label,valStr,color)=>`
+            <div style="flex:1;text-align:center;padding:0 8px">
+                <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#a0a0ab;margin-bottom:3px">${label}</div>
+                <div style="font-size:15px;font-weight:800;color:${color}">${valStr}</div>
+            </div>`;
+        const div=(color='#f0f0f2')=>`<div style="width:1px;background:${color};flex-shrink:0"></div>`;
+        banner.innerHTML =
+            mkStat('Продавців', scored.length, '#1d1d1f') +
+            div() +
+            mkStat('Загалом', fmtV(totalSum, m.fmt), m.color) +
+            div() +
+            mkStat('Середнє', fmtV(avgVal, m.fmt), '#5856d6');
+        grid.appendChild(banner);
+
         scored.forEach((item,i)=>{
             const barPct=(item.val/maxVal*100).toFixed(1);
             const CAT_KEYS_DISP=['AV','IT','DIG','SDA','MDA','NIP'];
@@ -961,6 +981,17 @@ function renderRating(){
             const subLine=avgMode&&totalVal!=null&&!isAvgByNature
                 ? `Разом: ${fmtV(totalVal,m.fmt)}`
                 : (!avgMode&&m.fmt==='money'&&item.uniqueMonths>1&&!isAvgByNature?`Сер./міс: ${fmtV(totalVal/item.uniqueMonths,m.fmt)}`:'');
+
+            // відхилення від середнього
+            const diff = item.val - avgVal;
+            const diffPct = avgVal ? (diff/avgVal*100) : 0;
+            const diffColor = diff>=0 ? '#1a7f37' : '#c0392b';
+            const diffBg    = diff>=0 ? 'rgba(52,199,89,0.10)' : 'rgba(255,59,48,0.10)';
+            const diffSign  = diff>=0 ? '+' : '';
+            const diffStr   = m.fmt==='money'||m.fmt==='int'
+                ? `${diffSign}${fmtV(Math.abs(diff),m.fmt)} (${diffSign}${diffPct.toFixed(1)}%)`
+                : `${diffSign}${diffPct.toFixed(1)}%`;
+
             const card=document.createElement('div');card.className='rank-card';
             card.innerHTML=`
                 <div class="rank-bg" style="background:${m.color};width:${barPct}%"></div>
@@ -968,9 +999,10 @@ function renderRating(){
                     <div class="rank-pos ${i===0?'gold':i===1?'silver':i===2?'bronze':'rest'}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div>
                     <div class="rank-name">
                         <div class="rank-name-text">${item.seller}</div>
-                        <div class="rank-sub" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px">
+                        <div class="rank-sub" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;align-items:center">
                             ${i>0?`<span>${(item.val/scored[0].val*100).toFixed(1)}% від лідера</span>`:''}
                             <span style="background:rgba(0,0,0,.06);border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700;color:#6e6e73">📅 ${item.uniqueMonths} міс.</span>
+                            <span style="background:${diffBg};border-radius:5px;padding:1px 7px;font-size:9px;font-weight:700;color:${diffColor}">${diff>=0?'▲':'▼'} ${diffStr}</span>
                         </div>
                     </div>
                     <div class="rank-val">
