@@ -964,19 +964,20 @@ function renderRating(){
         const totalSum    = scored.reduce((s,x)=>s+x.val, 0);
         const totalMonths = scored.reduce((s,x)=>s+x.uniqueMonths, 0);
 
-        // Зважене середнє завжди: сума оригіналів / сума місяців
-        // Для % і avg-by-nature — просте арифметичне (вони вже per-month за природою)
+        // Зважене середнє: Σ(ТО_продавця × місяці) / Σ(місяці)
+        // Кожен продавець має вагу пропорційну кількості відпрацьованих місяців
+        // Для % і avg-by-nature — просте арифметичне
         let displayAvg;
         if(!isAvgByNatureGlobal && totalMonths > 0){
-            const rawSum = scored.reduce((s,x)=>s+getRawTotal(x), 0);
-            displayAvg = rawSum / totalMonths;
+            const weightedSum = scored.reduce((s,x) => s + getRawTotal(x) * x.uniqueMonths, 0);
+            displayAvg = weightedSum / totalMonths;
         } else {
             displayAvg = totalSum / scored.length;
         }
 
         const totalPotential = (m.fmt==='money'||m.fmt==='int')
-            ? scored.filter(x=> x.val < displayAvg)
-                    .reduce((s,x)=> s + (displayAvg - x.val) * x.uniqueMonths, 0)
+            ? scored.filter(x => getRawTotal(x) < displayAvg)
+                    .reduce((s,x) => s + (displayAvg - getRawTotal(x)), 0)
             : 0;
 
         const banner = document.createElement('div');
@@ -1007,8 +1008,9 @@ function renderRating(){
                 ? `Разом: ${fmtV(totalVal,m.fmt)}`
                 : (!avgMode&&m.fmt==='money'&&item.uniqueMonths>1&&!isAvgByNature?`Сер./міс: ${fmtV(totalVal/item.uniqueMonths,m.fmt)}`:'');
 
-            // відхилення від середнього
-            const diff = item.val - displayAvg;
+            // відхилення: порівнюємо загальний ТО продавця із зваженим середнім
+            const sellerTotal = getRawTotal(item);
+            const diff = sellerTotal - displayAvg;
             const diffPct = displayAvg ? (diff/displayAvg*100) : 0;
             const diffColor = diff>=0 ? '#1a7f37' : '#c0392b';
             const diffBg    = diff>=0 ? 'rgba(52,199,89,0.10)' : 'rgba(255,59,48,0.10)';
@@ -1017,9 +1019,9 @@ function renderRating(){
                 ? `${diffSign}${fmtV(Math.abs(diff),m.fmt)} (${diffSign}${diffPct.toFixed(1)}%)`
                 : `${diffSign}${diffPct.toFixed(1)}%`;
 
-            // потенціал — тільки для негативного відхилення і грошових метрик
+            // потенціал = скільки недобрав відносно зваженого середнього
             const potential = diff < 0 && (m.fmt==='money'||m.fmt==='int')
-                ? Math.abs(diff) * item.uniqueMonths
+                ? Math.abs(diff)
                 : null;
 
             const card=document.createElement('div');card.className='rank-card';
