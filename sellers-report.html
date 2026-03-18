@@ -354,6 +354,10 @@ const RATING_METRICS = [
     { key:'MDA', label:'MDA', color:'#2980b9', fmt:'money', higher:true, group:'cat' },
     { key:'NIP', label:'NIP', color:'#27ae60', fmt:'money', higher:true, group:'cat' },
     { key:'SDA', label:'SDA', color:'#d35400', fmt:'money', higher:true, group:'cat' },
+    // Середнє за місяць
+    { key:'__avg_to__',   label:'Сер.ТО',   color:'#0071e3', fmt:'money', higher:true, group:'avg', baseKey:'ТО' },
+    { key:'__avg_serv__', label:'Сер.Посл', color:'#34c759', fmt:'money', higher:true, group:'avg', baseKey:'Послуги грн' },
+    { key:'__avg_acc__',  label:'Сер.ACC',  color:'#ff9500', fmt:'money', higher:true, group:'avg', baseKey:'ACC' },
 ];
 
 // Всі метрики для динаміки (ті самі + кілька доп.)
@@ -737,19 +741,22 @@ function renderTable(){
 // ── RATING ──
 function renderMetricPills(){
     const cont=document.getElementById('metricPills');cont.innerHTML='';
-    // Група "Основні"
     const g1=document.createElement('div');g1.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px';
     const g2=document.createElement('div');g2.style.cssText='display:flex;flex-wrap:wrap;gap:5px;padding-top:6px;border-top:1px solid #f2f2f4';
     const g2lbl=document.createElement('div');g2lbl.style.cssText='width:100%;font-size:9px;font-weight:700;color:#86868b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px';g2lbl.textContent='Категорії';g2.appendChild(g2lbl);
+    const g3=document.createElement('div');g3.style.cssText='display:flex;flex-wrap:wrap;gap:5px;padding-top:6px;border-top:1px solid #f2f2f4';
+    const g3lbl=document.createElement('div');g3lbl.style.cssText='width:100%;font-size:9px;font-weight:700;color:#86868b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px';g3lbl.textContent='⌀ Середнє / міс';g3.appendChild(g3lbl);
     RATING_METRICS.forEach(m=>{
         const b=document.createElement('button');
         b.className='mpill'+(m.key===activeMetricKey?' active':'');
         b.textContent=m.label;
         if(m.key===activeMetricKey){b.style.background=m.color;b.style.borderColor=m.color;}
         b.onclick=()=>{activeMetricKey=m.key;renderMetricPills();renderRating();};
-        (m.group==='cat'?g2:g1).appendChild(b);
+        if(m.group==='cat') g2.appendChild(b);
+        else if(m.group==='avg') g3.appendChild(b);
+        else g1.appendChild(b);
     });
-    cont.appendChild(g1);cont.appendChild(g2);
+    cont.appendChild(g1);cont.appendChild(g2);cont.appendChild(g3);
 }
 
 // ── DYNAMICS ──
@@ -902,11 +909,17 @@ function renderRating(){
 
         const scored=Object.entries(byS).map(([seller,rows])=>{
             const agg=aggregate(rows);
-            const val=agg?agg[m.key]:null;
-            // Рахуємо унікальні місяці (з урахуванням року) які відпрацював продавець
             const uniqueMonths=new Set(rows.map(r=>r.рік+'-'+r.місяць)).size;
-            const avg=val!==null&&uniqueMonths>0?val/uniqueMonths:null;
-            return{seller,val,uniqueMonths,avg};
+            let val;
+            if(m.group==='avg'&&m.baseKey){
+                // середнє = сума базової метрики / кількість місяців
+                const total=agg?agg[m.baseKey]:null;
+                val=total!=null&&uniqueMonths>0?total/uniqueMonths:null;
+            } else {
+                val=agg?agg[m.key]:null;
+            }
+            const avgTO=agg&&agg['ТО']!=null&&uniqueMonths>0?agg['ТО']/uniqueMonths:null;
+            return{seller,val,uniqueMonths,avgTO,agg};
         }).filter(x=>x.val!==null);
 
         scored.sort((a,b)=>m.higher?b.val-a.val:a.val-b.val);
@@ -914,8 +927,8 @@ function renderRating(){
 
         scored.forEach((item,i)=>{
             const barPct=(item.val/maxVal*100).toFixed(1);
-            const avgStr=item.avg!==null&&m.fmt==='money'?`Серед./міс: ${fmtV(item.avg,m.fmt)}`:'';
-            const monthsStr=item.uniqueMonths>1?`${item.uniqueMonths} міс.`:`${item.uniqueMonths} міс.`;
+            const isAvgMetric=m.group==='avg';
+            const avgStr=!isAvgMetric&&item.agg&&item.agg['ТО']!=null&&m.fmt==='money'?`Сер./міс: ${fmtV(item.avgTO,m.fmt)}`:'';
             const card=document.createElement('div');card.className='rank-card';
             card.innerHTML=`
                 <div class="rank-bg" style="background:${m.color};width:${barPct}%"></div>
@@ -925,7 +938,8 @@ function renderRating(){
                         <div class="rank-name-text">${item.seller}</div>
                         <div class="rank-sub" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px">
                             ${i>0?`<span>${(item.val/scored[0].val*100).toFixed(1)}% від лідера</span>`:''}
-                            <span style="background:rgba(0,0,0,.06);border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700;color:#6e6e73">📅 ${monthsStr}</span>
+                            <span style="background:rgba(0,0,0,.06);border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700;color:#6e6e73">📅 ${item.uniqueMonths} міс.</span>
+                            ${isAvgMetric?`<span style="background:rgba(0,0,0,.06);border-radius:5px;padding:1px 6px;font-size:9px;font-weight:600;color:#6e6e73">⌀ за місяць</span>`:''}
                         </div>
                     </div>
                     <div class="rank-val">
