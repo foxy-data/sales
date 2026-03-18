@@ -936,48 +936,51 @@ function renderRating(){
             const agg=aggregate(rows);
             const uniqueMonths=new Set(rows.map(r=>r.рік+'-'+r.місяць)).size;
             const CAT_KEYS=['AV','IT','DIG','SDA','MDA','NIP'];
-            const total = m.allCat
+            const isAvgByNature = PCT_KEYS.has(m.key);
+
+            // rawTotal — завжди загальна сума (незалежно від режиму)
+            const rawTotal = m.allCat
                 ? CAT_KEYS.reduce((s,k)=>s+(agg&&agg[k]!=null?agg[k]:0),0)||null
                 : agg?agg[m.key]:null;
-            // для % і середніх метрик — average вже в aggregate(), не ділимо на місяці
-            const isAvgByNature = PCT_KEYS.has(m.key);
-            const val = avgMode && total!=null && !isAvgByNature && uniqueMonths>0
-                ? total/uniqueMonths
-                : total;
-            const avgTO=agg&&agg['ТО']!=null&&uniqueMonths>0?agg['ТО']/uniqueMonths:null;
-            return{seller,val,uniqueMonths,avgTO,agg};
+
+            // monthlyVal — показник за місяць
+            const monthlyVal = rawTotal!=null && uniqueMonths>0 && !isAvgByNature
+                ? rawTotal / uniqueMonths
+                : rawTotal;
+
+            // val для сортування і відображення
+            const val = avgMode && !isAvgByNature ? monthlyVal : rawTotal;
+
+            return {seller, val, rawTotal, monthlyVal, uniqueMonths, agg, isAvgByNature};
         }).filter(x=>x.val!==null);
 
         scored.sort((a,b)=>m.higher?b.val-a.val:a.val-b.val);
         const maxVal=scored[0]?.val||1;
 
-        // ── ШАПКА: загальне + середнє ──
-        const CAT_KEYS_SUM = ['AV','IT','DIG','SDA','MDA','NIP'];
-        const isAvgByNatureGlobal = PCT_KEYS.has(m.key);
-
-        // Оригінальні суми (до ділення на місяці) для зваженого середнього
-        const getRawTotal = (item) => {
-            if(m.allCat) return CAT_KEYS_SUM.reduce((s,k)=>s+(item.agg&&item.agg[k]!=null?item.agg[k]:0),0);
-            return item.agg ? item.agg[m.key] : 0;
-        };
-
-        const totalSum    = scored.reduce((s,x)=>s+x.val, 0);
-        const totalMonths = scored.reduce((s,x)=>s+x.uniqueMonths, 0);
-
-        // Зважене середнє: Σ(ТО_продавця × місяці) / Σ(місяці)
-        // Кожен продавець має вагу пропорційну кількості відпрацьованих місяців
+        // ── СЕРЕДНЄ ──
+        // Зважене середнє місячного показника: Σ(місячний × місяці) / Σ(місяці)
+        // = Σ(rawTotal) / Σ(місяці) — те саме але через rawTotal
         // Для % і avg-by-nature — просте арифметичне
-        let displayAvg;
-        if(!isAvgByNatureGlobal && totalMonths > 0){
-            const weightedSum = scored.reduce((s,x) => s + getRawTotal(x) * x.uniqueMonths, 0);
-            displayAvg = weightedSum / totalMonths;
-        } else {
-            displayAvg = totalSum / scored.length;
-        }
+        const isAvgByNatureGlobal = PCT_KEYS.has(m.key);
+        const totalMonths = scored.reduce((s,x)=>s+x.uniqueMonths, 0);
+        const totalRaw    = scored.reduce((s,x)=>s+(x.rawTotal||0), 0);
 
+        // зважене середнє місячного: Σ(rawTotal) / Σ(місяці)
+        const weightedMonthlyAvg = !isAvgByNatureGlobal && totalMonths>0
+            ? totalRaw / totalMonths
+            : scored.reduce((s,x)=>s+x.val,0) / scored.length;
+
+        // те що показуємо в шапці і порівнюємо — завжди місячне зважене
+        const displayAvg = weightedMonthlyAvg;
+
+        // totalSum для шапки — залежить від режиму
+        const totalSum = scored.reduce((s,x)=>s+x.val, 0);
+
+        // потенціал: хто має місячний показник нижче середнього
+        // потенціал = (середнє - місячний) × місяці = скільки недобрав за свій період
         const totalPotential = (m.fmt==='money'||m.fmt==='int')
-            ? scored.filter(x => getRawTotal(x) < displayAvg)
-                    .reduce((s,x) => s + (displayAvg - getRawTotal(x)), 0)
+            ? scored.filter(x => x.monthlyVal < displayAvg)
+                    .reduce((s,x) => s + (displayAvg - x.monthlyVal) * x.uniqueMonths, 0)
             : 0;
 
         const banner = document.createElement('div');
@@ -991,37 +994,35 @@ function renderRating(){
         banner.innerHTML =
             mkStat('Продавців', scored.length, '#1d1d1f') +
             div() +
-            mkStat('Загалом', fmtV(totalSum, m.fmt), m.color) +
+            mkStat(avgMode?'Сума/міс':'Загалом', fmtV(totalSum, m.fmt), m.color) +
             div() +
-            mkStat(!isAvgByNatureGlobal?'Сер. зважене':'Середнє', fmtV(displayAvg, m.fmt), '#5856d6') +
+            mkStat('Сер.зважене/міс', fmtV(displayAvg, m.fmt), '#5856d6') +
             (totalPotential>0 ? div()+ mkStat('🎯 Потенціал', fmtV(totalPotential, m.fmt), '#c0392b') : '');
         grid.appendChild(banner);
 
         scored.forEach((item,i)=>{
             const barPct=(item.val/maxVal*100).toFixed(1);
-            const CAT_KEYS_DISP=['AV','IT','DIG','SDA','MDA','NIP'];
-            const totalVal = m.allCat
-                ? CAT_KEYS_DISP.reduce((s,k)=>s+(item.agg&&item.agg[k]!=null?item.agg[k]:0),0)||null
-                : item.agg?item.agg[m.key]:null;
-            const isAvgByNature=PCT_KEYS.has(m.key);
-            const subLine=avgMode&&totalVal!=null&&!isAvgByNature
-                ? `Разом: ${fmtV(totalVal,m.fmt)}`
-                : (!avgMode&&m.fmt==='money'&&item.uniqueMonths>1&&!isAvgByNature?`Сер./міс: ${fmtV(totalVal/item.uniqueMonths,m.fmt)}`:'');
+            const isAvgByNature=item.isAvgByNature;
+            const subLine = avgMode && item.rawTotal!=null && !isAvgByNature
+                ? `Загалом: ${fmtV(item.rawTotal, m.fmt)}`
+                : (!avgMode && m.fmt==='money' && item.uniqueMonths>1 && !isAvgByNature
+                    ? `Сер./міс: ${fmtV(item.monthlyVal, m.fmt)}`
+                    : '');
 
-            // відхилення: порівнюємо загальний ТО продавця із зваженим середнім
-            const sellerTotal = getRawTotal(item);
-            const diff = sellerTotal - displayAvg;
+            // відхилення: завжди порівнюємо місячний показник із зваженим середнім місячним
+            const sellerMonthly = item.isAvgByNature ? item.val : item.monthlyVal;
+            const diff    = sellerMonthly - displayAvg;
             const diffPct = displayAvg ? (diff/displayAvg*100) : 0;
             const diffColor = diff>=0 ? '#1a7f37' : '#c0392b';
             const diffBg    = diff>=0 ? 'rgba(52,199,89,0.10)' : 'rgba(255,59,48,0.10)';
             const diffSign  = diff>=0 ? '+' : '';
             const diffStr   = m.fmt==='money'||m.fmt==='int'
-                ? `${diffSign}${fmtV(Math.abs(diff),m.fmt)} (${diffSign}${diffPct.toFixed(1)}%)`
+                ? `${diffSign}${fmtV(Math.abs(diff),m.fmt)}/міс (${diffSign}${diffPct.toFixed(1)}%)`
                 : `${diffSign}${diffPct.toFixed(1)}%`;
 
-            // потенціал = скільки недобрав відносно зваженого середнього
+            // потенціал = (середнє - місячний) × місяці — скільки недобрав за свій період
             const potential = diff < 0 && (m.fmt==='money'||m.fmt==='int')
-                ? Math.abs(diff)
+                ? Math.abs(diff) * item.uniqueMonths
                 : null;
 
             const card=document.createElement('div');card.className='rank-card';
