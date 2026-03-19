@@ -362,6 +362,8 @@ function mkPill(text,active,onclick){
     const b=document.createElement('button');b.className='pill'+(active?' active':'');b.textContent=text;b.onclick=onclick;return b;
 }
 function updFilters(){
+    // В режимі порівняння пілюлі повністю перемальовуються через renderFilters — тут нічого не робимо
+    if(compareMode) return;
     document.querySelectorAll('#yearPills .pill[data-period]').forEach(b=>{
         const key=b.dataset.period;
         const y=+key.split('_')[0];
