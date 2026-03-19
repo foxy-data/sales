@@ -299,6 +299,12 @@ function detectAndParse(rows){
 }
 
 function activeMonths(y){ return allMonths.filter(m=>selectedPeriods.has(y+'_'+m)); }
+function getAllPairs(){
+    return allYears.flatMap(y=>
+        allMonths.filter(m=>allMetrics.some(met=>parsedByYear[y]?.[met]?.[m]!=null))
+                 .map(m=>({y,m,key:y+'_'+m}))
+    );
+}
 function activePeriods(){ return allYears.flatMap(y=>allMonths.filter(m=>selectedPeriods.has(y+'_'+m)).map(m=>({y,m}))); }
 function yColor(y){return yearColorMap[y]||'#86868b';}
 function dsColor(y,mi){const bi=CHART_COLORS.indexOf(yearColorMap[y]);return CHART_COLORS[(bi+mi*2)%CHART_COLORS.length];}
