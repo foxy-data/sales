@@ -272,29 +272,45 @@ function renderFilters(){
     const yp=document.getElementById('yearPills');yp.innerHTML='';
 
     // "Всі"
-    const allPairs=allYears.flatMap(y=>allMonths.map(m=>y+'_'+m));
+    const allPairs=allYears.flatMap(y=>allMonths.filter(m=>allMetrics.some(met=>parsedByYear[y]?.[met]?.[m]!=null)).map(m=>y+'_'+m));
     const allActive=allPairs.every(k=>selectedPeriods.has(k));
-    const ba=mkPill('Всі',allActive,()=>{
-        allPairs.forEach(k=>selectedPeriods.add(k));
-        renderFilters();refreshAll();
-    });
+    const ba=mkPill('Всі',allActive,()=>{allPairs.forEach(k=>selectedPeriods.add(k));renderFilters();refreshAll();});
     yp.appendChild(ba);
 
-    // Пілюлі "Міс РР" — тільки ті пари де є дані
+    const divider=()=>{const s=document.createElement('span');s.style.cssText='color:#d2d2d7;align-self:center;padding:0 3px;font-size:11px';s.textContent='|';return s;};
+    yp.appendChild(divider());
+
+    // По кожному року — заголовок + місяці
     allYears.slice().sort((a,b)=>a-b).forEach(y=>{
-        allMonths.forEach(m=>{
-            const hasData=allMetrics.some(met=>parsedByYear[y]&&parsedByYear[y][met]&&parsedByYear[y][met][m]!=null);
-            if(!hasData)return;
+        const yc=yColor(y);
+        const availM=allMonths.filter(m=>allMetrics.some(met=>parsedByYear[y]?.[met]?.[m]!=null));
+        if(!availM.length)return;
+
+        const allYActive=availM.every(m=>selectedPeriods.has(y+'_'+m));
+        const yBtn=document.createElement('button');
+        yBtn.className='pill'+(allYActive?' active':'');
+        yBtn.textContent=y;
+        yBtn.style.fontWeight='800';
+        if(allYActive){yBtn.style.background=yc;yBtn.style.borderColor=yc;yBtn.style.color='#fff';}
+        yBtn.onclick=()=>{
+            if(allYActive){availM.forEach(m=>{if(selectedPeriods.size>1)selectedPeriods.delete(y+'_'+m);});}
+            else{availM.forEach(m=>selectedPeriods.add(y+'_'+m));}
+            renderFilters();refreshAll();
+        };
+        yp.appendChild(yBtn);
+
+        availM.forEach(m=>{
             const key=y+'_'+m;
-            const btn=mkPill(MONTHS_UK[m-1].slice(0,3)+' '+String(y).slice(2), selectedPeriods.has(key), ()=>{
+            const btn=mkPill(MONTHS_UK[m-1].slice(0,3), selectedPeriods.has(key), ()=>{
                 if(selectedPeriods.has(key)){if(selectedPeriods.size>1)selectedPeriods.delete(key);}
                 else selectedPeriods.add(key);
                 renderFilters();refreshAll();
             });
             btn.dataset.period=key;
-            if(selectedPeriods.has(key)){btn.style.background=yColor(y);btn.style.borderColor=yColor(y);}
+            if(selectedPeriods.has(key)){btn.style.background=yc;btn.style.borderColor=yc;}
             yp.appendChild(btn);
         });
+        yp.appendChild(divider());
     });
 
     const mp=document.getElementById('monthPills');if(mp)mp.innerHTML='';
@@ -418,15 +434,19 @@ function renderChart(){
         body.innerHTML=`<div class="empty-chart"><div class="empty-chart-icon">📊</div><div class="empty-chart-text">Натисніть на рядок у таблиці, щоб додати показник</div></div>`;
         renderSummary();return;
     }
-    const periods=activePeriods();const years=[...new Set(periods.map(p=>p.y))].sort((a,b)=>a-b);const metrics=[...selectedMetrics];const months=[...new Set(periods.map(p=>p.m))].sort((a,b)=>a-b);
-    const labels=periods.map(p=>MONTHS_UK[p.m-1].slice(0,3)+' '+String(p.y).slice(2));
+    const periods=activePeriods();const years=[...new Set(periods.map(p=>p.y))].sort((a,b)=>a-b);const metrics=[...selectedMetrics];
+    // Вісь X — унікальні місяці з вибраних periods, відсортовані
+    const xMonths=[...new Set(periods.map(p=>p.m))].sort((a,b)=>a-b);
+    const labels=xMonths.map(m=>MONTHS_UK[m-1].slice(0,3));
     const datasets=[];
     metrics.forEach((metric,mi)=>{
         years.forEach(y=>{
             const mv=parsedByYear[y]?.[metric]||{};
             const color=dsColor(y,mi);
             const label=years.length>1?`${metric} (${y})`:metric;
-            datasets.push({label,data:periods.map(p=>p.y===y?(mv[p.m]??null):null),borderColor:color,backgroundColor:color+'18',pointBackgroundColor:color,pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:7,tension:0.35,fill:false,spanGaps:true});
+            // дані тільки для місяців що вибрані для цього року
+            const data=xMonths.map(m=>selectedPeriods.has(y+'_'+m)?(mv[m]??null):null);
+            datasets.push({label,data,borderColor:color,backgroundColor:color+'18',pointBackgroundColor:color,pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:7,tension:0.35,fill:false,spanGaps:true});
         });
     });
     if(chartInstance){chartInstance.destroy();chartInstance=null;}
