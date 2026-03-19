@@ -248,16 +248,12 @@
     </div>
 </div>
 
-<div class="filters-wrap">
-    <div class="filter-group">
-        <span class="filter-label">📅 Від</span>
-        <select id="dateFrom" onchange="onDateRangeChange()" style="border:none;background:transparent;font-size:12px;font-weight:600;color:#1d1d1f;font-family:inherit;cursor:pointer;padding:4px 2px;outline:none"></select>
+<div class="filters-wrap" style="flex-direction:column;align-items:stretch">
+    <div class="filter-group" style="border-right:none;border-bottom:1px solid #f0f0f2;flex-wrap:wrap">
+        <span class="filter-label" style="padding-top:8px">📅 Період</span>
+        <div class="pills" id="periodPills" style="flex-wrap:wrap;padding:6px 0"></div>
     </div>
-    <div class="filter-group">
-        <span class="filter-label">📅 До</span>
-        <select id="dateTo" onchange="onDateRangeChange()" style="border:none;background:transparent;font-size:12px;font-weight:600;color:#1d1d1f;font-family:inherit;cursor:pointer;padding:4px 2px;outline:none"></select>
-    </div>
-    <div class="filter-group filter-flex">
+    <div class="filter-group" style="border-right:none">
         <span class="filter-label">👤 Продавець</span>
         <div class="pills" id="sellerPills"></div>
     </div>
@@ -376,8 +372,7 @@ const DYN_METRICS = [
 let allData = [];        // [{рік,місяць,продавець, ...поля}]
 let allYears = [], allMonths = [], allSellers = [];
 let selSellers = new Set();
-let dateFrom = null; // {y, m}
-let dateTo   = null; // {y, m}
+let selPeriods = new Set();
 let viewMode = 'table';
 let activeMetricKey = 'ТО';
 let avgMode = false;
@@ -552,13 +547,12 @@ function fmtV(v,type){
 
 // FILTER
 function ym(y,m){return y*100+m;}
+function ymKey(y,m){return y+'_'+m;}
 
 function filteredData(){
     return allData.filter(r=>{
-        const v=ym(r.рік,r.місяць);
-        if(dateFrom && v < ym(dateFrom.y,dateFrom.m)) return false;
-        if(dateTo   && v > ym(dateTo.y,  dateTo.m))   return false;
-        if(selSellers.size&&!selSellers.has(r.продавець))return false;
+        if(selPeriods.size && !selPeriods.has(ymKey(r.рік,r.місяць))) return false;
+        if(selSellers.size && !selSellers.has(r.продавець)) return false;
         return true;
     });
 }
@@ -582,28 +576,42 @@ function aggregate(rows){
 }
 
 // ── FILTERS RENDER ──
-function buildDateOptions(){
-    // Збираємо всі унікальні рік-місяць пари з даних, сортуємо
-    const pairs=[...new Set(allData.map(r=>r.рік*100+r.місяць))].sort((a,b)=>a-b);
-    return pairs.map(v=>({y:Math.floor(v/100),m:v%100,label:MONTHS_UK[(v%100)-1].slice(0,3)+' '+Math.floor(v/100)}));
+function getAllPairs(){
+    return [...new Set(allData.map(r=>ym(r.рік,r.місяць)))].sort((a,b)=>a-b)
+        .map(v=>({y:Math.floor(v/100), m:v%100, key:ymKey(Math.floor(v/100),v%100)}));
 }
 
 function renderFilters(){
-    const opts=buildDateOptions();
-    const fromSel=document.getElementById('dateFrom');
-    const toSel=document.getElementById('dateTo');
-    fromSel.innerHTML='';toSel.innerHTML='';
-    opts.forEach(o=>{
-        const o1=document.createElement('option');o1.value=o.y+'_'+o.m;o1.textContent=o.label;fromSel.appendChild(o1);
-        const o2=document.createElement('option');o2.value=o.y+'_'+o.m;o2.textContent=o.label;toSel.appendChild(o2);
+    const pairs=getAllPairs();
+    if(!pairs.length) return;
+
+    // За замовчуванням — всі вибрані
+    if(selPeriods.size===0) pairs.forEach(p=>selPeriods.add(p.key));
+
+    const pp=document.getElementById('periodPills');
+    pp.innerHTML='';
+
+    // "Всі"
+    const allActive=selPeriods.size===pairs.length;
+    const ab=document.createElement('button');
+    ab.className='pill'+(allActive?' active':'');
+    ab.textContent='Всі';
+    ab.onclick=()=>{pairs.forEach(p=>selPeriods.add(p.key));renderFilters();refresh();};
+    pp.appendChild(ab);
+
+    // Пілюля на кожен місяць-рік: "Січ 24"
+    pairs.forEach(p=>{
+        const b=document.createElement('button');
+        b.className='pill'+(selPeriods.has(p.key)?' active':'');
+        b.textContent=MONTHS_UK[p.m-1].slice(0,3)+' '+String(p.y).slice(2);
+        b.onclick=()=>{
+            if(selPeriods.has(p.key)){if(selPeriods.size>1)selPeriods.delete(p.key);}
+            else selPeriods.add(p.key);
+            renderFilters();refresh();
+        };
+        pp.appendChild(b);
     });
-    // За замовчуванням: від — перший, до — останній
-    if(opts.length){
-        if(!dateFrom){dateFrom={y:opts[0].y,m:opts[0].m};}
-        if(!dateTo)  {dateTo  ={y:opts[opts.length-1].y,m:opts[opts.length-1].m};}
-        fromSel.value=dateFrom.y+'_'+dateFrom.m;
-        toSel.value  =dateTo.y  +'_'+dateTo.m;
-    }
+
     // Продавці
     const sp=document.getElementById('sellerPills');sp.innerHTML='';
     mkPillAll(sp,'Всі',selSellers.size===0,()=>{selSellers.clear();refresh();});
@@ -617,19 +625,9 @@ function renderFilters(){
     });
 }
 
-function onDateRangeChange(){
-    const fv=document.getElementById('dateFrom').value.split('_');
-    const tv=document.getElementById('dateTo').value.split('_');
-    dateFrom={y:+fv[0],m:+fv[1]};
-    dateTo  ={y:+tv[0],m:+tv[1]};
-    // якщо від > до — swap
-    if(ym(dateFrom.y,dateFrom.m)>ym(dateTo.y,dateTo.m)){
-        [dateFrom,dateTo]=[dateTo,dateFrom];
-        document.getElementById('dateFrom').value=dateFrom.y+'_'+dateFrom.m;
-        document.getElementById('dateTo').value  =dateTo.y  +'_'+dateTo.m;
-    }
-    refresh();
-}
+function onYearMonthChange(){}
+function onPeriodChange(){}
+function onDateRangeChange(){}
 
 function mkPillAll(container,text,active,onclick){
     const b=document.createElement('button');b.className='pill'+(active?' active':'');b.textContent=text;b.onclick=onclick;container.appendChild(b);
@@ -660,9 +658,10 @@ function renderTable(){
     if(!sellers.length){card.innerHTML='<div class="status-box">Немає даних за обраний фільтр</div>';return;}
 
     const hint=document.createElement('div');hint.className='table-hint';
-    const fromStr = dateFrom ? MONTHS_UK[dateFrom.m-1].slice(0,3)+' '+dateFrom.y : '—';
-    const toStr   = dateTo   ? MONTHS_UK[dateTo.m-1].slice(0,3)+' '+dateTo.y     : '—';
-    hint.innerHTML=`📊 <b style="color:var(--accent)">${sellers.length} продавців</b> · ${fromStr} — ${toStr}`;
+    const pairs=getAllPairs();
+    const allSelected=selPeriods.size===pairs.length;
+    const periodStr=allSelected?'весь період':[...selPeriods].sort().map(k=>{const[y,m]=k.split('_');return MONTHS_UK[+m-1].slice(0,3)+' '+String(y).slice(2);}).join(', ');
+    hint.innerHTML=`📊 <b style="color:var(--accent)">${sellers.length} продавців</b> · ${periodStr}`;
     card.appendChild(hint);
 
     const wrap=document.createElement('div');wrap.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;';card.appendChild(wrap);
@@ -859,7 +858,7 @@ function renderDynChart(){
     const datasets=sellers.map((seller,si)=>{
         const color=DYN_COLORS[si%DYN_COLORS.length];
         const data=timePoints.map(tp=>{
-            const rows=allData.filter(r=>r.рік===tp.y&&r.місяць===tp.m&&r.продавець===seller&&ym(r.рік,r.місяць)>=ym(dateFrom?.y||0,dateFrom?.m||0)&&ym(r.рік,r.місяць)<=ym(dateTo?.y||9999,dateTo?.m||12));
+            const rows=allData.filter(r=>r.рік===tp.y&&r.місяць===tp.m&&r.продавець===seller&&(selPeriods.size===0||selPeriods.has(ymKey(r.рік,r.місяць))));
             if(!rows.length)return null;
             const vals=rows.map(r=>r[dynMetricKey]).filter(v=>v!=null);
             if(!vals.length)return null;
