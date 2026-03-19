@@ -250,12 +250,12 @@
 
 <div class="filters-wrap">
     <div class="filter-group">
-        <span class="filter-label">📅 Рік</span>
-        <div class="pills" id="yearPills"></div>
+        <span class="filter-label">📅 Від</span>
+        <select id="dateFrom" onchange="onDateRangeChange()" style="border:none;background:transparent;font-size:12px;font-weight:600;color:#1d1d1f;font-family:inherit;cursor:pointer;padding:4px 2px;outline:none"></select>
     </div>
     <div class="filter-group">
-        <span class="filter-label">📆 Місяць</span>
-        <div class="pills" id="monthPills"></div>
+        <span class="filter-label">📅 До</span>
+        <select id="dateTo" onchange="onDateRangeChange()" style="border:none;background:transparent;font-size:12px;font-weight:600;color:#1d1d1f;font-family:inherit;cursor:pointer;padding:4px 2px;outline:none"></select>
     </div>
     <div class="filter-group filter-flex">
         <span class="filter-label">👤 Продавець</span>
@@ -375,7 +375,9 @@ const DYN_METRICS = [
 // STATE
 let allData = [];        // [{рік,місяць,продавець, ...поля}]
 let allYears = [], allMonths = [], allSellers = [];
-let selYears = new Set(), selMonths = new Set(), selSellers = new Set();
+let selSellers = new Set();
+let dateFrom = null; // {y, m}
+let dateTo   = null; // {y, m}
 let viewMode = 'table';
 let activeMetricKey = 'ТО';
 let avgMode = false;
@@ -521,9 +523,7 @@ function parseFull(rows){
     allYears=[...ySet].sort((a,b)=>b-a);
     allMonths=[...mSet].sort((a,b)=>a-b);
     allSellers=[...sSet].sort();
-
-    selYears.add(allYears[0]);
-    // всі місяці і продавці за замовчуванням
+    // dateFrom/dateTo встановлюються в renderFilters
 }
 
 function findIdx(header,keys){
@@ -551,10 +551,13 @@ function fmtV(v,type){
 }
 
 // FILTER
+function ym(y,m){return y*100+m;}
+
 function filteredData(){
     return allData.filter(r=>{
-        if(selYears.size&&!selYears.has(r.рік))return false;
-        if(selMonths.size&&!selMonths.has(r.місяць))return false;
+        const v=ym(r.рік,r.місяць);
+        if(dateFrom && v < ym(dateFrom.y,dateFrom.m)) return false;
+        if(dateTo   && v > ym(dateTo.y,  dateTo.m))   return false;
         if(selSellers.size&&!selSellers.has(r.продавець))return false;
         return true;
     });
@@ -579,26 +582,28 @@ function aggregate(rows){
 }
 
 // ── FILTERS RENDER ──
+function buildDateOptions(){
+    // Збираємо всі унікальні рік-місяць пари з даних, сортуємо
+    const pairs=[...new Set(allData.map(r=>r.рік*100+r.місяць))].sort((a,b)=>a-b);
+    return pairs.map(v=>({y:Math.floor(v/100),m:v%100,label:MONTHS_UK[(v%100)-1].slice(0,3)+' '+Math.floor(v/100)}));
+}
+
 function renderFilters(){
-    // Роки
-    const yp=document.getElementById('yearPills');yp.innerHTML='';
-    mkPillAll(yp,'Всі',selYears.size===allYears.length,()=>{allYears.forEach(y=>selYears.add(y));refresh();});
-    allYears.forEach(y=>{
-        mkPill(yp,y,selYears.has(y),()=>{
-            selYears.has(y)?(selYears.size>1&&selYears.delete(y)):selYears.add(y);refresh();
-        },'data-year',y);
+    const opts=buildDateOptions();
+    const fromSel=document.getElementById('dateFrom');
+    const toSel=document.getElementById('dateTo');
+    fromSel.innerHTML='';toSel.innerHTML='';
+    opts.forEach(o=>{
+        const o1=document.createElement('option');o1.value=o.y+'_'+o.m;o1.textContent=o.label;fromSel.appendChild(o1);
+        const o2=document.createElement('option');o2.value=o.y+'_'+o.m;o2.textContent=o.label;toSel.appendChild(o2);
     });
-    // Місяці
-    const mp=document.getElementById('monthPills');mp.innerHTML='';
-    mkPillAll(mp,'Всі',selMonths.size===0,()=>{selMonths.clear();refresh();});
-    allMonths.forEach(m=>{
-        mkPill(mp,MONTHS_UK[m-1].slice(0,3),selMonths.size===0||selMonths.has(m),()=>{
-            if(selMonths.size===0){selMonths.add(m);}
-            else if(selMonths.has(m)){selMonths.delete(m);}
-            else{selMonths.add(m);}
-            refresh();
-        },'data-month',m);
-    });
+    // За замовчуванням: від — перший, до — останній
+    if(opts.length){
+        if(!dateFrom){dateFrom={y:opts[0].y,m:opts[0].m};}
+        if(!dateTo)  {dateTo  ={y:opts[opts.length-1].y,m:opts[opts.length-1].m};}
+        fromSel.value=dateFrom.y+'_'+dateFrom.m;
+        toSel.value  =dateTo.y  +'_'+dateTo.m;
+    }
     // Продавці
     const sp=document.getElementById('sellerPills');sp.innerHTML='';
     mkPillAll(sp,'Всі',selSellers.size===0,()=>{selSellers.clear();refresh();});
@@ -611,6 +616,21 @@ function renderFilters(){
         },'data-seller',s);
     });
 }
+
+function onDateRangeChange(){
+    const fv=document.getElementById('dateFrom').value.split('_');
+    const tv=document.getElementById('dateTo').value.split('_');
+    dateFrom={y:+fv[0],m:+fv[1]};
+    dateTo  ={y:+tv[0],m:+tv[1]};
+    // якщо від > до — swap
+    if(ym(dateFrom.y,dateFrom.m)>ym(dateTo.y,dateTo.m)){
+        [dateFrom,dateTo]=[dateTo,dateFrom];
+        document.getElementById('dateFrom').value=dateFrom.y+'_'+dateFrom.m;
+        document.getElementById('dateTo').value  =dateTo.y  +'_'+dateTo.m;
+    }
+    refresh();
+}
+
 function mkPillAll(container,text,active,onclick){
     const b=document.createElement('button');b.className='pill'+(active?' active':'');b.textContent=text;b.onclick=onclick;container.appendChild(b);
 }
@@ -618,14 +638,10 @@ function mkPill(container,text,active,onclick,attr,val){
     const b=document.createElement('button');b.className='pill'+(active?' active':'');b.textContent=text;if(attr)b.setAttribute(attr,val);b.onclick=onclick;container.appendChild(b);
 }
 function updFilters(){
-    document.querySelectorAll('#yearPills .pill[data-year]').forEach(b=>{b.className='pill'+(selYears.has(+b.dataset.year)?' active':'');});
-    document.querySelector('#yearPills .pill:not([data-year])')?.classList.toggle('active',selYears.size===allYears.length);
-    document.querySelectorAll('#monthPills .pill[data-month]').forEach(b=>{b.className='pill'+((selMonths.size===0||selMonths.has(+b.dataset.month))?' active':'');});
-    document.querySelector('#monthPills .pill:not([data-month])')?.classList.toggle('active',selMonths.size===0);
     document.querySelectorAll('#sellerPills .pill[data-seller]').forEach(b=>{b.className='pill'+((selSellers.size===0||selSellers.has(b.dataset.seller))?' active':'');});
     document.querySelector('#sellerPills .pill:not([data-seller])')?.classList.toggle('active',selSellers.size===0);
 }
-function refresh(){updFilters();if(viewMode==='table')renderTable();else renderRating();}
+function refresh(){updFilters();if(viewMode==='table')renderTable();else if(viewMode==='rating')renderRating();else{renderDynControls();renderDynChart();}}
 
 // ── TABLE ──
 function renderTable(){
@@ -644,10 +660,9 @@ function renderTable(){
     if(!sellers.length){card.innerHTML='<div class="status-box">Немає даних за обраний фільтр</div>';return;}
 
     const hint=document.createElement('div');hint.className='table-hint';
-    const months=selMonths.size===0?allMonths:[...selMonths].sort((a,b)=>a-b);
-    const yrs=[...selYears].sort((a,b)=>a-b).join(', ');
-    const monStr=selMonths.size===0?'всі місяці':months.map(m=>MONTHS_UK[m-1].slice(0,3)).join(', ');
-    hint.innerHTML=`📊 <b style="color:var(--accent)">${sellers.length} продавців</b> · ${yrs} · ${monStr}`;
+    const fromStr = dateFrom ? MONTHS_UK[dateFrom.m-1].slice(0,3)+' '+dateFrom.y : '—';
+    const toStr   = dateTo   ? MONTHS_UK[dateTo.m-1].slice(0,3)+' '+dateTo.y     : '—';
+    hint.innerHTML=`📊 <b style="color:var(--accent)">${sellers.length} продавців</b> · ${fromStr} — ${toStr}`;
     card.appendChild(hint);
 
     const wrap=document.createElement('div');wrap.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;';card.appendChild(wrap);
@@ -828,17 +843,13 @@ function renderDynChart(){
         if(dynChartInstance){dynChartInstance.destroy();dynChartInstance=null;}
         body.innerHTML='<div class="dyn-empty">📊 Оберіть продавця</div>';return;
     }
-    // Збираємо місяці і роки з фільтрів
-    const years=[...selYears].sort((a,b)=>a-b);
-    const allM=[...new Set(filteredData().map(r=>r.місяць))].sort((a,b)=>a-b);
-    if(!allM.length){body.innerHTML='<div class="dyn-empty">Немає даних</div>';return;}
-
-    // Labels: якщо кілька років — "Міс РРРР", якщо один — "Міс"
-    const timePoints=[];
-    years.forEach(y=>{allM.forEach(m=>{
-        const exists=allData.some(r=>r.рік===y&&r.місяць===m&&(selMonths.size===0||selMonths.has(m)));
-        if(exists)timePoints.push({y,m,label:years.length>1?MONTHS_UK[m-1].slice(0,3)+' '+y:MONTHS_UK[m-1].slice(0,3)});
-    });});
+    // Збираємо всі рік-місяць точки з відфільтрованих даних
+    const fd = filteredData();
+    const tpSet = [...new Set(fd.map(r=>r.рік*100+r.місяць))].sort((a,b)=>a-b);
+    const timePoints = tpSet.map(v=>({
+        y:Math.floor(v/100), m:v%100,
+        label: MONTHS_UK[(v%100)-1].slice(0,3)+' '+Math.floor(v/100)
+    }));
     if(!timePoints.length){body.innerHTML='<div class="dyn-empty">Немає даних</div>';return;}
 
     const metricMeta=DYN_METRICS.find(x=>x.key===dynMetricKey)||{key:dynMetricKey,label:dynMetricKey,color:'#0071e3',fmt:'money'};
@@ -848,7 +859,7 @@ function renderDynChart(){
     const datasets=sellers.map((seller,si)=>{
         const color=DYN_COLORS[si%DYN_COLORS.length];
         const data=timePoints.map(tp=>{
-            const rows=allData.filter(r=>r.рік===tp.y&&r.місяць===tp.m&&r.продавець===seller&&(selMonths.size===0||selMonths.has(r.місяць)));
+            const rows=allData.filter(r=>r.рік===tp.y&&r.місяць===tp.m&&r.продавець===seller&&ym(r.рік,r.місяць)>=ym(dateFrom?.y||0,dateFrom?.m||0)&&ym(r.рік,r.місяць)<=ym(dateTo?.y||9999,dateTo?.m||12));
             if(!rows.length)return null;
             const vals=rows.map(r=>r[dynMetricKey]).filter(v=>v!=null);
             if(!vals.length)return null;
