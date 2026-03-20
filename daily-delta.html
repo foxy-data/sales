@@ -391,6 +391,14 @@ function mkTd(text, cls, sty) {
     if (sty) Object.assign(t.style, sty);
     return t;
 }
+function deltaClass(d) {
+    if (d === null || d === undefined) return '';
+    if (d < 0.8) return 'd5';
+    if (d < 0.95) return 'd4';
+    if (d <= 1.05) return 'd3';
+    if (d <= 1.25) return 'd2';
+    return 'd1';
+}
 // ──────────────────────────────────────────────
 // РЕНДЕР ТАБЛИЦІ (звичайна вкладка)
 // ──────────────────────────────────────────────
@@ -425,7 +433,9 @@ function renderTable() {
     sts.forEach((st, i) => {
         const c = STORE_HDR[i % STORE_HDR.length];
         ['Фокс','Комфі','Δ'].forEach((l, j) => {
-            trH.appendChild(mkTh(l, 'sub', {background:c, borderLeft: (j === 0 && i > 0) ? '2px solid rgba(255,255,255,0.2)' : ''}));
+            const th = mkTh(l, 'sub', {background:c});
+            if (j === 0 && i > 0) th.style.borderLeft = '2px solid rgba(255,255,255,0.2)';
+            trH.appendChild(th);
         });
     });
     thead.appendChild(trH);
@@ -458,7 +468,7 @@ function renderTable() {
     const trTot = document.createElement('tr'); trTot.className = 'tot';
     const tdTot = mkTd('РАЗОМ', 'c-l1');
     trTot.appendChild(tdTot);
-    trTot.appendChild(document.createElement('td')); // c-l2 пустий
+    trTot.appendChild(document.createElement('td'));
     sts.forEach((st, i) => {
         const bg = STORE_BG[i % STORE_BG.length];
         let sf = 0, sk = 0;
@@ -512,7 +522,6 @@ function renderWeekday() {
     const segDefs = [{key:'wd', lbl:'Пн–Чт'}, {key:'we', lbl:'Пт–Сб'}];
     const segsToShow = segDefs.filter(s => selSegments.has(s.key));
     if (segsToShow.length === 0) segsToShow.push(...segDefs);
-    // Заголовок 1 рядок
     const trG = document.createElement('tr');
     trG.appendChild(mkTh('Рік', 'c-l1', {background:'#374151',color:'#fff',rowSpan:3}));
     trG.appendChild(mkTh('Тиж', 'c-l2', {background:'#374151',color:'#fff',rowSpan:3}));
@@ -525,7 +534,6 @@ function renderWeekday() {
         trG.appendChild(th);
     });
     thead.appendChild(trG);
-    // Заголовок 2 рядок - сегменти
     const trSeg = document.createElement('tr');
     sts.forEach((st, i) => {
         const c = STORE_HDR[i % STORE_HDR.length];
@@ -537,7 +545,6 @@ function renderWeekday() {
         });
     });
     thead.appendChild(trSeg);
-    // Заголовок 3 рядок - Фокс Комфі Δ
     const trH = document.createElement('tr');
     sts.forEach((st, i) => {
         const c = STORE_HDR[i % STORE_HDR.length];
@@ -586,7 +593,6 @@ function renderWeekday() {
             });
         });
         tbody.appendChild(tr);
-        // Рядок різниці
         if (idx > 0) {
             const prevK = keys[idx - 1];
             const prev = wMap.get(prevK);
