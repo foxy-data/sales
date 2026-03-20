@@ -8,225 +8,61 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
-:root {
-  --bg: #f5f5f7;
-  --text: #1d1d1f;
-  --text-sec: #6e6e73;
-  --accent: #0071e3;
-  --border: #d2d2d7;
-  --card: #fff;
-  --shadow: 0 4px 20px rgba(0,0,0,0.06);
-}
-* { box-sizing: border-box; margin:0; padding:0; }
-body {
-  font-family: 'Inter', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  padding: 8px 10px 60px;
-}
-@keyframes shimmer {
-  0% { background-position: -600px 0; }
-  100% { background-position: 600px 0; }
-}
-.skel {
-  background: linear-gradient(90deg, #eaeaed 25%, #f5f5f7 50%, #eaeaed 75%);
-  background-size: 600px 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-  border-radius: 7px;
-}
-.skel-row { display: flex; gap: 8px; padding: 9px 10px; border-bottom: 1px solid #f2f2f4; }
-.skel-cell { height: 11px; border-radius: 5px; flex: 1; }
-.skel-cell.w { flex: 2; }
-.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; }
-.back-link { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 14px; }
-.page-title { font-size: 20px; font-weight: 700; }
-.tabs {
-  display: flex;
-  gap: 2px;
-  background: #e5e5ea;
-  border-radius: 12px;
-  padding: 3px;
-  margin-bottom: 12px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.tab {
-  border: none;
-  background: transparent;
-  padding: 6px 14px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--text-sec);
-  font-family: inherit;
-  transition: all .2s;
-  white-space: nowrap;
-}
-.tab.active {
-  background: white;
-  color: var(--text);
-  box-shadow: 0 1px 4px rgba(0,0,0,.12);
-}
-.filters-wrap {
-  background: var(--card);
-  border-radius: 14px;
-  box-shadow: var(--shadow);
-  margin-bottom: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.06);
-}
-.filter-row {
-  display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 7px 12px;
-  border-bottom: 1px solid #f0f0f2;
-}
-.filter-row:last-child { border-bottom: none; }
-.filter-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: #a0a0ab;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  padding-top: 4px;
-  margin-right: 6px;
-  white-space: nowrap;
-}
-.pill {
-  border: none;
-  background: transparent;
-  padding: 3px 7px;
-  border-radius: 7px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  color: #6e6e73;
-  transition: all .15s;
-  white-space: nowrap;
-}
-.pill:hover { background: #f2f2f7; color: #1d1d1f; }
-.pill.active { background: #1d1d1f; color: #fff; }
-.pill-all { border: 1px solid #d2d2d7; color: #555; }
-.pill-all.active { background: #374151; border-color: #374151; color: #fff; }
-.table-card {
-  background: var(--card);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  margin-bottom: 14px;
-  overflow: hidden;
-}
-.table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  max-height: 70vh;
-  overflow-y: auto;
-}
-.table-hint {
-  font-size: 11px;
-  color: var(--text-sec);
-  padding: 7px 12px;
-  border-bottom: 1px solid #f2f2f4;
-  background: #fafafa;
-}
-table { border-collapse: collapse; min-width: 100%; }
-th, td {
-  padding: 4px 7px;
-  border-bottom: 1px solid #f2f2f4;
-  font-size: 11px;
-  text-align: right;
-  white-space: nowrap;
-}
-thead { position: sticky; top: 0; z-index: 30; }
-th.grp {
-  text-align: center;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .05em;
-  color: #fff;
-  border-bottom: 1px solid rgba(255,255,255,0.15);
-  height: 22px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 120px;
-}
-th.sub {
-  font-size: 9px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.9);
-  text-transform: uppercase;
-  height: 20px;
-  border-bottom: 2px solid rgba(0,0,0,0.2);
-}
-th.c-l1, td.c-l1 {
-  position: sticky;
-  left: 0;
-  z-index: 5;
-  text-align: left;
-  min-width: 52px;
-  width: 52px;
-  font-size: 10px;
-  font-weight: 600;
-  background: var(--card);
-}
-th.c-l1 { z-index: 31; }
-th.c-l2, td.c-l2 {
-  position: sticky;
-  left: 52px;
-  z-index: 5;
-  text-align: left;
-  min-width: 34px;
-  width: 34px;
-  font-size: 10px;
-  background: var(--card);
-  border-right: 2px solid rgba(0,0,0,0.1);
-  box-shadow: 3px 0 5px -2px rgba(0,0,0,.07);
-}
-th.c-l2 { z-index: 31; }
-th.c-l1, th.c-l2 { background: #374151; color: #fff; }
-tr.weekend td { background: #fff8f0 !important; }
-tr.weekend td.c-l1, tr.weekend td.c-l2 { background: #fff0e0 !important; }
-tr.wk-sep td { border-top: 2px solid #c8c8d0 !important; }
-tr.tot td {
-  background: #f0f4ff !important;
-  font-weight: 700;
-  border-top: 2px solid #b0c0e0;
-}
-tr.tot td.c-l1, tr.tot td.c-l2 { background: #e0e8ff !important; }
-.d5 { color: #15803d; font-weight: 700; background: rgba(21,128,61,.08); border-radius: 3px; padding: 1px 3px; }
-.d4 { color: #16a34a; font-weight: 600; }
-.d3 { color: #6b7280; font-weight: 600; }
-.d2 { color: #c2410c; font-weight: 600; }
-.d1 { color: #b91c1c; font-weight: 700; background: rgba(185,28,28,.08); border-radius: 3px; padding: 1px 3px; }
-tr.diff-row td {
-  background: #fefce8;
-  font-size: 10px;
-  color: #7c2d12;
-  border-bottom: 1px solid #fde68a;
-}
-tr.diff-row td.diff-pos { color: #15803d; }
-tr.diff-row td.diff-neg { color: #b91c1c; }
-.chart-card {
-  background: var(--card);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  padding: 16px;
-  margin-bottom: 14px;
-}
-.chart-wrap { position: relative; height: 360px; }
-.ctrl-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
-.ctrl-lbl { font-size: 11px; font-weight: 600; color: var(--text-sec); margin-right: 2px; }
-.status-box { padding: 40px; text-align: center; color: var(--text-sec); font-size: 14px; }
-.status-box.error { color: #ff3b30; }
-#storePills {
-  flex-wrap: nowrap !important;
-  overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch;
-}
+:root{--bg:#f5f5f7;--text:#1d1d1f;--text-sec:#6e6e73;--accent:#0071e3;--border:#d2d2d7;--card:#fff;--shadow:0 4px 20px rgba(0,0,0,0.06);}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);padding:8px 10px 60px}
+@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+.skel{background:linear-gradient(90deg,#eaeaed 25%,#f5f5f7 50%,#eaeaed 75%);background-size:600px 100%;animation:shimmer 1.4s ease-in-out infinite;border-radius:7px}
+.skel-row{display:flex;gap:8px;padding:9px 10px;border-bottom:1px solid #f2f2f4}
+.skel-cell{height:11px;border-radius:5px;flex:1}.skel-cell.w{flex:2}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.back-link{color:var(--accent);text-decoration:none;font-weight:600;font-size:14px}
+.page-title{font-size:20px;font-weight:700}
+.tabs{display:flex;gap:2px;background:#e5e5ea;border-radius:12px;padding:3px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{border:none;background:transparent;padding:6px 14px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-sec);font-family:inherit;transition:all .2s;white-space:nowrap}
+.tab.active{background:white;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.filters-wrap{background:var(--card);border-radius:14px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden;border:1px solid rgba(0,0,0,0.06)}
+.filter-row{display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px;padding:7px 12px;border-bottom:1px solid #f0f0f2}
+.filter-row:last-child{border-bottom:none}
+.filter-label{font-size:10px;font-weight:700;color:#a0a0ab;text-transform:uppercase;letter-spacing:.06em;padding-top:4px;margin-right:6px;white-space:nowrap}
+.pill{border:none;background:transparent;padding:3px 7px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#6e6e73;transition:all .15s;white-space:nowrap}
+.pill:hover{background:#f2f2f7;color:#1d1d1f}
+.pill.active{background:#1d1d1f;color:#fff}
+.pill-all{border:1px solid #d2d2d7;color:#555}
+.pill-all.active{background:#374151;border-color:#374151;color:#fff}
+.table-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:70vh;overflow-y:auto}
+.table-hint{font-size:11px;color:var(--text-sec);padding:7px 12px;border-bottom:1px solid #f2f2f4;background:#fafafa}
+table{border-collapse:collapse;min-width:100%}
+th,td{padding:4px 7px;border-bottom:1px solid #f2f2f4;font-size:11px;text-align:right;white-space:nowrap}
+thead{position:sticky;top:0;z-index:30}
+th.grp{text-align:center;font-size:9px;font-weight:800;letter-spacing:.05em;color:#fff;border-bottom:1px solid rgba(255,255,255,0.15);height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+th.sub{font-size:9px;font-weight:700;color:rgba(255,255,255,0.9);text-transform:uppercase;height:20px;border-bottom:2px solid rgba(0,0,0,0.2)}
+th.c-l1,td.c-l1{position:sticky;left:0;z-index:31;text-align:left;min-width:52px;width:52px;font-size:10px;font-weight:600;background:var(--card)}
+th.c-l2,td.c-l2{position:sticky;left:52px;z-index:30;text-align:left;min-width:34px;width:34px;font-size:10px;background:var(--card);border-right:2px solid rgba(0,0,0,0.1);box-shadow:3px 0 5px -2px rgba(0,0,0,.07)}
+th.c-l1,th.c-l2{background:#374151;color:#fff}
+tr.weekend td{background:#fff8f0!important}
+tr.weekend td.c-l1,tr.weekend td.c-l2{background:#fff0e0!important}
+tr.wk-sep td{border-top:2px solid #c8c8d0!important}
+tr.tot td{background:#f0f4ff!important;font-weight:700;border-top:2px solid #b0c0e0}
+tr.tot td.c-l1,tr.tot td.c-l2{background:#e0e8ff!important}
+.d5{color:#15803d;font-weight:700;background:rgba(21,128,61,.08);border-radius:3px;padding:1px 3px}
+.d4{color:#16a34a;font-weight:600}
+.d3{color:#6b7280;font-weight:600}
+.d2{color:#c2410c;font-weight:600}
+.d1{color:#b91c1c;font-weight:700;background:rgba(185,28,28,.08);border-radius:3px;padding:1px 3px}
+tr.diff-row td{background:#fefce8;font-size:10px;color:#7c2d12;border-bottom:1px solid #fde68a;position:relative;z-index:25}
+tr.diff-row td.diff-pos{color:#15803d}
+tr.diff-row td.diff-neg{color:#b91c1c}
+.chart-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.chart-wrap{position:relative;height:360px}
+.ctrl-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.ctrl-lbl{font-size:11px;font-weight:600;color:var(--text-sec);margin-right:2px}
+.status-box{padding:40px;text-align:center;color:var(--text-sec);font-size:14px}
+.status-box.error{color:#ff3b30}
+#storePills{flex-wrap:nowrap !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch !important;gap:4px;padding:6px 12px;scroll-padding:12px;scrollbar-width:thin}
+#storePills::-webkit-scrollbar{height:6px}
+#storePills::-webkit-scrollbar-thumb{background:#c1c1c1;border-radius:3px}
 </style>
 </head>
 <body>
@@ -264,6 +100,7 @@ tr.diff-row td.diff-neg { color: #b91c1c; }
 <div id="tabContent">
   <div class="table-card"><div class="status-box">Завантаження…</div></div>
 </div>
+
 <script>
 // ──────────────────────────────────────────────
 // КОНСТАНТИ
@@ -273,6 +110,7 @@ const MONTHS_UK = ['Січень','Лютий','Березень','Квітен�
 const DOW_WE = ["пт","сб","нд","субота","неділя","friday","saturday","sunday","пятниця"];
 const STORE_HDR = ['#1a56db','#0e7490','#6b21a8','#9d174d','#065f46','#92400e','#1e40af','#7c3aed'];
 const STORE_BG = ['#eff6ff','#ecfeff','#faf5ff','#fdf2f8','#ecfdf5','#fffbeb','#eff6ff','#f5f3ff'];
+
 // ──────────────────────────────────────────────
 // СТАН
 // ──────────────────────────────────────────────
@@ -281,6 +119,7 @@ let selYears = new Set(), selMonths = new Set(), selStores = new Set();
 let selSegments = new Set(['wd','we']);
 let activeTab = 'table', chartInstance = null;
 let selChartMode = 'store', selChartStore = '', selChartPeriod = 'day', selChartMetric = 'delta';
+
 // ──────────────────────────────────────────────
 // УТИЛІТИ
 // ──────────────────────────────────────────────
@@ -536,7 +375,7 @@ function renderFilters() {
     document.getElementById('filtersWrap').style.display = '';
 }
 // ──────────────────────────────────────────────
-// ДОПОМІЖНІ ФУНКЦІЇ ДЛЯ ТАБЛИЦЬ (були відсутні)
+// ДОПОМІЖНІ ФУНКЦІЇ ДЛЯ ТАБЛИЦЬ
 // ──────────────────────────────────────────────
 function mkTh(text, cls, sty) {
     const t = document.createElement('th');
@@ -571,14 +410,11 @@ function renderTable() {
     const tbl = document.createElement('table');
     const thead = document.createElement('thead');
     const trG = document.createElement('tr');
-    trG.appendChild(Object.assign(document.createElement('th'), {textContent: 'Дата', className: 'c-l1', style: 'background:#374151;color:#fff;', rowSpan: 2}));
-    trG.appendChild(Object.assign(document.createElement('th'), {textContent: '', className: 'c-l2', style: 'background:#374151;color:#fff;', rowSpan: 2}));
+    trG.appendChild(mkTh('Дата', 'c-l1', {background:'#374151',color:'#fff',rowSpan:2}));
+    trG.appendChild(mkTh('', 'c-l2', {background:'#374151',color:'#fff',rowSpan:2}));
     sts.forEach((st, i) => {
         const c = STORE_HDR[i % STORE_HDR.length];
-        const th = document.createElement('th');
-        th.textContent = st.name;
-        th.className = 'grp';
-        th.style.background = c;
+        const th = mkTh(st.name, 'grp', {background:c});
         if (i > 0) th.style.borderLeft = '2px solid rgba(255,255,255,0.2)';
         th.colSpan = 3;
         th.title = st.name;
@@ -589,12 +425,7 @@ function renderTable() {
     sts.forEach((st, i) => {
         const c = STORE_HDR[i % STORE_HDR.length];
         ['Фокс','Комфі','Δ'].forEach((l, j) => {
-            const th = document.createElement('th');
-            th.textContent = l;
-            th.className = 'sub';
-            th.style.background = c;
-            if (j === 0 && i > 0) th.style.borderLeft = '2px solid rgba(255,255,255,0.2)';
-            trH.appendChild(th);
+            trH.appendChild(mkTh(l, 'sub', {background:c, borderLeft: (j === 0 && i > 0) ? '2px solid rgba(255,255,255,0.2)' : ''}));
         });
     });
     thead.appendChild(trH);
@@ -605,23 +436,28 @@ function renderTable() {
         const tr = document.createElement('tr');
         if (r.isWE) tr.classList.add('weekend');
         if (r.week && r.week !== prevWeek) { tr.classList.add('wk-sep'); prevWeek = r.week; }
-        const tdDate = document.createElement('td'); tdDate.textContent = fmtDate(r.date); tdDate.className = 'c-l1'; tr.appendChild(tdDate);
-        const tdDow = document.createElement('td'); tdDow.textContent = r.dowName ? r.dowName.slice(0,2) : ''; tdDow.className = 'c-l2'; tr.appendChild(tdDow);
+        const tdDate = mkTd(fmtDate(r.date), 'c-l1');
+        const tdDow = mkTd(r.dowName ? r.dowName.slice(0,2) : '', 'c-l2');
+        tr.appendChild(tdDate);
+        tr.appendChild(tdDow);
         sts.forEach((st, i) => {
             const bg = STORE_BG[i % STORE_BG.length];
             const v = r.storeVals[st.name] || {};
             const f = v.foks ?? null;
             const k = v.komf ?? null;
             const d = v.delta ?? (f != null && k != null && f !== 0 ? k / f : null);
-            const tdF = document.createElement('td'); tdF.textContent = fmt(f); tdF.style.background = bg; if (i > 0) tdF.style.borderLeft = '2px solid #d0d0da'; tr.appendChild(tdF);
-            const tdK = document.createElement('td'); tdK.textContent = fmt(k); tdK.style.background = bg; tr.appendChild(tdK);
-            const tdD = document.createElement('td'); tdD.textContent = d != null ? d.toFixed(2) : null; tdD.className = deltaClass(d); tdD.style.background = bg; tr.appendChild(tdD);
+            const tdF = mkTd(fmt(f), '', {background:bg, borderLeft: i > 0 ? '2px solid #d0d0da' : ''});
+            const tdK = mkTd(fmt(k), '', {background:bg});
+            const tdD = mkTd(d != null ? d.toFixed(2) : null, deltaClass(d), {background:bg});
+            tr.appendChild(tdF);
+            tr.appendChild(tdK);
+            tr.appendChild(tdD);
         });
         tbody.appendChild(tr);
     });
-    // Тотал
     const trTot = document.createElement('tr'); trTot.className = 'tot';
-    const tdTot = document.createElement('td'); tdTot.textContent = 'РАЗОМ'; tdTot.className = 'c-l1'; trTot.appendChild(tdTot);
+    const tdTot = mkTd('РАЗОМ', 'c-l1');
+    trTot.appendChild(tdTot);
     trTot.appendChild(document.createElement('td')); // c-l2 пустий
     sts.forEach((st, i) => {
         const bg = STORE_BG[i % STORE_BG.length];
@@ -632,9 +468,12 @@ function renderTable() {
             if (v.komf != null) sk += v.komf;
         });
         const sd = sf > 0 ? sk / sf : null;
-        const tdF = document.createElement('td'); tdF.textContent = fmt(sf); tdF.style.background = bg; if (i > 0) tdF.style.borderLeft = '2px solid #d0d0da'; trTot.appendChild(tdF);
-        const tdK = document.createElement('td'); tdK.textContent = fmt(sk); tdK.style.background = bg; trTot.appendChild(tdK);
-        const tdD = document.createElement('td'); tdD.textContent = sd != null ? sd.toFixed(2) : null; tdD.className = deltaClass(sd); tdD.style.background = bg; trTot.appendChild(tdD);
+        const tdF = mkTd(fmt(sf), '', {background:bg, borderLeft: i > 0 ? '2px solid #d0d0da' : '', fontWeight:'700'});
+        const tdK = mkTd(fmt(sk), '', {background:bg, fontWeight:'700'});
+        const tdD = mkTd(sd != null ? sd.toFixed(2) : null, deltaClass(sd), {background:bg, fontWeight:'700'});
+        trTot.appendChild(tdF);
+        trTot.appendChild(tdK);
+        trTot.appendChild(tdD);
     });
     tbody.appendChild(trTot);
     tbl.appendChild(tbody);
@@ -642,14 +481,6 @@ function renderTable() {
     card.appendChild(wrap);
     cont.innerHTML = '';
     cont.appendChild(card);
-}
-function deltaClass(d) {
-    if (d === null || d === undefined) return '';
-    if (d < 0.8) return 'd5';
-    if (d < 0.95) return 'd4';
-    if (d <= 1.05) return 'd3';
-    if (d <= 1.25) return 'd2';
-    return 'd1';
 }
 // ──────────────────────────────────────────────
 // ВКЛАДКА Пн–Чт / Пт–Нд
@@ -683,14 +514,11 @@ function renderWeekday() {
     if (segsToShow.length === 0) segsToShow.push(...segDefs);
     // Заголовок 1 рядок
     const trG = document.createElement('tr');
-    trG.appendChild(Object.assign(document.createElement('th'), {textContent: 'Рік', className: 'c-l1', style: 'background:#374151;color:#fff;', rowSpan: 3}));
-    trG.appendChild(Object.assign(document.createElement('th'), {textContent: 'Тиж', className: 'c-l2', style: 'background:#374151;color:#fff;', rowSpan: 3}));
+    trG.appendChild(mkTh('Рік', 'c-l1', {background:'#374151',color:'#fff',rowSpan:3}));
+    trG.appendChild(mkTh('Тиж', 'c-l2', {background:'#374151',color:'#fff',rowSpan:3}));
     sts.forEach((st, i) => {
         const c = STORE_HDR[i % STORE_HDR.length];
-        const th = document.createElement('th');
-        th.textContent = st.name;
-        th.className = 'grp';
-        th.style.background = c;
+        const th = mkTh(st.name, 'grp', {background:c});
         if (i > 0) th.style.borderLeft = '2px solid rgba(255,255,255,0.2)';
         th.colSpan = segsToShow.length * 3;
         th.title = st.name;
@@ -702,10 +530,7 @@ function renderWeekday() {
     sts.forEach((st, i) => {
         const c = STORE_HDR[i % STORE_HDR.length];
         segsToShow.forEach((sdef, jSeg) => {
-            const th = document.createElement('th');
-            th.textContent = sdef.lbl;
-            th.className = 'grp';
-            th.style.background = (sdef.key === 'wd') ? c : c + '99';
+            const th = mkTh(sdef.lbl, 'grp', {background: (sdef.key === 'wd') ? c : c + '99'});
             if (i > 0 && jSeg === 0) th.style.borderLeft = '2px solid rgba(255,255,255,0.2)';
             th.colSpan = 3;
             trSeg.appendChild(th);
@@ -719,10 +544,7 @@ function renderWeekday() {
         segsToShow.forEach((sdef, jSeg) => {
             const segBg = (sdef.key === 'wd') ? c : c + '99';
             ['Фокс','Комфі','Δ'].forEach((l, k2) => {
-                const th = document.createElement('th');
-                th.textContent = l;
-                th.className = 'sub';
-                th.style.background = segBg;
+                const th = mkTh(l, 'sub', {background: segBg});
                 if (k2 === 0) {
                     if (i > 0 && jSeg === 0) th.style.borderLeft = '2px solid rgba(255,255,255,0.2)';
                     else if (jSeg > 0) th.style.borderLeft = '1px solid rgba(255,255,255,0.15)';
@@ -738,8 +560,10 @@ function renderWeekday() {
     keys.forEach((k, idx) => {
         const w = wMap.get(k);
         const tr = document.createElement('tr');
-        const tdYear = document.createElement('td'); tdYear.textContent = String(w.year); tdYear.className = 'c-l1'; tr.appendChild(tdYear);
-        const tdWeek = document.createElement('td'); tdWeek.textContent = 'T' + w.week; tdWeek.className = 'c-l2'; tr.appendChild(tdWeek);
+        const tdYear = mkTd(String(w.year), 'c-l1');
+        const tdWeek = mkTd('T' + w.week, 'c-l2');
+        tr.appendChild(tdYear);
+        tr.appendChild(tdWeek);
         sts.forEach((st, i) => {
             const bg = STORE_BG[i % STORE_BG.length];
             segsToShow.forEach((sdef, jSeg) => {
@@ -753,9 +577,12 @@ function renderWeekday() {
                 const d = f > 0 ? kv / f : null;
                 const isFirstSeg = jSeg === 0;
                 const bl = (isFirstSeg && i > 0) ? '2px solid #d0d0da' : (jSeg > 0 ? '1px solid #e8e8ec' : '');
-                const tdF = document.createElement('td'); tdF.textContent = fmt(f); tdF.style.background = bg; tdF.style.borderLeft = bl; tr.appendChild(tdF);
-                const tdK = document.createElement('td'); tdK.textContent = fmt(kv); tdK.style.background = bg; tr.appendChild(tdK);
-                const tdD = document.createElement('td'); tdD.textContent = d != null ? d.toFixed(2) : null; tdD.className = deltaClass(d); tdD.style.background = bg; tr.appendChild(tdD);
+                const tdF = mkTd(fmt(f), '', {background: bg, borderLeft: bl});
+                const tdK = mkTd(fmt(kv), '', {background: bg});
+                const tdD = mkTd(d != null ? d.toFixed(2) : null, deltaClass(d), {background: bg});
+                tr.appendChild(tdF);
+                tr.appendChild(tdK);
+                tr.appendChild(tdD);
             });
         });
         tbody.appendChild(tr);
@@ -764,8 +591,9 @@ function renderWeekday() {
             const prevK = keys[idx - 1];
             const prev = wMap.get(prevK);
             const diffTr = document.createElement('tr'); diffTr.className = 'diff-row';
-            const tdLabel = document.createElement('td'); tdLabel.textContent = '↔ vs T' + prev.week; tdLabel.style.textAlign = 'left'; tdLabel.style.paddingLeft = '6px'; tdLabel.style.color = '#92400e'; tdLabel.style.fontWeight = '600'; tdLabel.style.fontSize = '10px'; diffTr.appendChild(tdLabel);
-            diffTr.appendChild(document.createElement('td')); // пустий
+            const tdLabel = mkTd('↔ vs T' + prev.week, '', {textAlign: 'left', paddingLeft: '6px', color: '#92400e', fontWeight: '600', fontSize: '10px'});
+            diffTr.appendChild(tdLabel);
+            diffTr.appendChild(document.createElement('td'));
             sts.forEach((st, i) => {
                 const bg = STORE_BG[i % STORE_BG.length];
                 segsToShow.forEach((sdef, jSeg) => {
@@ -778,9 +606,12 @@ function renderWeekday() {
                     const dd = (pf > 0 && cf > 0) ? (ck / cf) - (pk / pf) : null;
                     const isFirstSeg = jSeg === 0;
                     const bl = (isFirstSeg && i > 0) ? '2px solid #d0d0da' : (jSeg > 0 ? '1px solid #e8e8ec' : '');
-                    const tdF = document.createElement('td'); tdF.textContent = (df >= 0 ? '+' : '') + fmt(Math.abs(df)) + (df >= 0 ? ' ↑' : ' ↓'); tdF.className = df >= 0 ? 'diff-pos' : 'diff-neg'; tdF.style.background = bg; tdF.style.borderLeft = bl; tdF.style.fontSize = '10px'; diffTr.appendChild(tdF);
-                    const tdK = document.createElement('td'); tdK.textContent = (dk >= 0 ? '+' : '') + fmt(Math.abs(dk)) + (dk >= 0 ? ' ↑' : ' ↓'); tdK.className = dk >= 0 ? 'diff-pos' : 'diff-neg'; tdK.style.background = bg; tdK.style.fontSize = '10px'; diffTr.appendChild(tdK);
-                    const tdD = document.createElement('td'); tdD.textContent = dd != null ? (dd >= 0 ? '+' : '') + dd.toFixed(2) : null; tdD.className = dd == null ? '' : (dd <= 0 ? 'diff-pos' : 'diff-neg'); tdD.style.background = bg; tdD.style.fontSize = '10px'; diffTr.appendChild(tdD);
+                    const tdF = mkTd((df >= 0 ? '+' : '') + fmt(Math.abs(df)) + (df >= 0 ? ' ↑' : ' ↓'), df >= 0 ? 'diff-pos' : 'diff-neg', {background: bg, borderLeft: bl, fontSize: '10px'});
+                    const tdK = mkTd((dk >= 0 ? '+' : '') + fmt(Math.abs(dk)) + (dk >= 0 ? ' ↑' : ' ↓'), dk >= 0 ? 'diff-pos' : 'diff-neg', {background: bg, fontSize: '10px'});
+                    const tdD = mkTd(dd != null ? (dd >= 0 ? '+' : '') + dd.toFixed(2) : null, dd == null ? '' : (dd <= 0 ? 'diff-pos' : 'diff-neg'), {background: bg, fontSize: '10px'});
+                    diffTr.appendChild(tdF);
+                    diffTr.appendChild(tdK);
+                    diffTr.appendChild(tdD);
                 });
             });
             tbody.appendChild(diffTr);
@@ -844,14 +675,11 @@ function buildAggTable(cont, groupMap, sts, col1Label, col2Label, col2fmt) {
     const tbl = document.createElement('table');
     const thead = document.createElement('thead');
     const trG = document.createElement('tr');
-    const th1 = document.createElement('th'); th1.textContent = col1Label; th1.className = 'c-l1'; th1.style.background = '#374151'; th1.style.color = '#fff'; trG.appendChild(th1);
-    const th2 = document.createElement('th'); th2.textContent = col2Label; th2.className = 'c-l2'; th2.style.background = '#374151'; th2.style.color = '#fff'; trG.appendChild(th2);
+    const th1 = mkTh(col1Label, 'c-l1', {background:'#374151', color:'#fff'}); th1.rowSpan = 2; trG.appendChild(th1);
+    const th2 = mkTh(col2Label, 'c-l2', {background:'#374151', color:'#fff'}); th2.rowSpan = 2; trG.appendChild(th2);
     sts.forEach((st, i) => {
         const c = STORE_HDR[i % STORE_HDR.length];
-        const th = document.createElement('th');
-        th.textContent = st.name;
-        th.className = 'grp';
-        th.style.background = c;
+        const th = mkTh(st.name, 'grp', {background: c});
         if (i > 0) th.style.borderLeft = '2px solid rgba(255,255,255,0.2)';
         th.colSpan = 3;
         th.title = st.name;
@@ -862,10 +690,7 @@ function buildAggTable(cont, groupMap, sts, col1Label, col2Label, col2fmt) {
     sts.forEach((st, i) => {
         const c = STORE_HDR[i % STORE_HDR.length];
         ['Фокс','Комфі','Δ'].forEach((l, j) => {
-            const th = document.createElement('th');
-            th.textContent = l;
-            th.className = 'sub';
-            th.style.background = c;
+            const th = mkTh(l, 'sub', {background: c});
             if (j === 0 && i > 0) th.style.borderLeft = '2px solid rgba(255,255,255,0.2)';
             trH.appendChild(th);
         });
@@ -878,20 +703,26 @@ function buildAggTable(cont, groupMap, sts, col1Label, col2Label, col2fmt) {
         const {label, rows, prevKey} = groupMap.get(k);
         const agg = aggRows(rows, sts);
         const tr = document.createElement('tr');
-        const td1 = document.createElement('td'); td1.textContent = label.split('_')[0] || label; td1.className = 'c-l1'; tr.appendChild(td1);
-        const td2 = document.createElement('td'); td2.textContent = col2fmt(label); td2.className = 'c-l2'; tr.appendChild(td2);
+        const td1 = mkTd(label.split('_')[0] || label, 'c-l1');
+        const td2 = mkTd(col2fmt(label), 'c-l2');
+        tr.appendChild(td1);
+        tr.appendChild(td2);
         sts.forEach((st, i) => {
             const bg = STORE_BG[i % STORE_BG.length];
             const {f, k: kv, d} = agg[st.name] || {f:0, k:0, d:null};
-            const tdF = document.createElement('td'); tdF.textContent = fmt(f); tdF.style.background = bg; if (i > 0) tdF.style.borderLeft = '2px solid #d0d0da'; tr.appendChild(tdF);
-            const tdK = document.createElement('td'); tdK.textContent = fmt(kv); tdK.style.background = bg; tr.appendChild(tdK);
-            const tdD = document.createElement('td'); tdD.textContent = d != null ? d.toFixed(2) : null; tdD.className = deltaClass(d); tdD.style.background = bg; tr.appendChild(tdD);
+            const tdF = mkTd(fmt(f), '', {background: bg, borderLeft: i > 0 ? '2px solid #d0d0da' : ''});
+            const tdK = mkTd(fmt(kv), '', {background: bg});
+            const tdD = mkTd(d != null ? d.toFixed(2) : null, deltaClass(d), {background: bg});
+            tr.appendChild(tdF);
+            tr.appendChild(tdK);
+            tr.appendChild(tdD);
         });
         tbody.appendChild(tr);
         if (prevKey && groupMap.has(prevKey)) {
             const prevAgg = aggRows(groupMap.get(prevKey).rows, sts);
             const diffTr = document.createElement('tr'); diffTr.className = 'diff-row';
-            const tdLabel = document.createElement('td'); tdLabel.textContent = '↔ vs попер.'; tdLabel.style.textAlign = 'left'; tdLabel.style.paddingLeft = '4px'; tdLabel.style.color = '#92400e'; tdLabel.style.fontWeight = '600'; diffTr.appendChild(tdLabel);
+            const tdLabel = mkTd('↔ vs попер.', '', {textAlign: 'left', paddingLeft: '4px', color: '#92400e', fontWeight: '600'});
+            diffTr.appendChild(tdLabel);
             diffTr.appendChild(document.createElement('td'));
             sts.forEach((st, i) => {
                 const bg = STORE_BG[i % STORE_BG.length];
@@ -899,9 +730,12 @@ function buildAggTable(cont, groupMap, sts, col1Label, col2Label, col2fmt) {
                 const cf = agg[st.name]?.f || 0, ck = agg[st.name]?.k || 0;
                 const df = cf - pf, dk = ck - pk;
                 const dd = (pf > 0 && cf > 0) ? (ck / cf) - (pk / pf) : null;
-                const tdF = document.createElement('td'); tdF.textContent = (df >= 0 ? '+' : '') + fmt(Math.abs(df)) + (df >= 0 ? ' ↑' : ' ↓'); tdF.className = df >= 0 ? 'diff-pos' : 'diff-neg'; tdF.style.background = bg; if (i > 0) tdF.style.borderLeft = '2px solid #d0d0da'; tdF.style.fontSize = '10px'; diffTr.appendChild(tdF);
-                const tdK = document.createElement('td'); tdK.textContent = (dk >= 0 ? '+' : '') + fmt(Math.abs(dk)) + (dk >= 0 ? ' ↑' : ' ↓'); tdK.className = dk >= 0 ? 'diff-pos' : 'diff-neg'; tdK.style.background = bg; tdK.style.fontSize = '10px'; diffTr.appendChild(tdK);
-                const tdD = document.createElement('td'); tdD.textContent = dd != null ? (dd >= 0 ? '+' : '') + dd.toFixed(2) : null; tdD.className = dd == null ? '' : (dd <= 0 ? 'diff-pos' : 'diff-neg'); tdD.style.background = bg; tdD.style.fontSize = '10px'; diffTr.appendChild(tdD);
+                const tdF = mkTd((df >= 0 ? '+' : '') + fmt(Math.abs(df)) + (df >= 0 ? ' ↑' : ' ↓'), df >= 0 ? 'diff-pos' : 'diff-neg', {background: bg, borderLeft: i > 0 ? '2px solid #d0d0da' : '', fontSize: '10px'});
+                const tdK = mkTd((dk >= 0 ? '+' : '') + fmt(Math.abs(dk)) + (dk >= 0 ? ' ↑' : ' ↓'), dk >= 0 ? 'diff-pos' : 'diff-neg', {background: bg, fontSize: '10px'});
+                const tdD = mkTd(dd != null ? (dd >= 0 ? '+' : '') + dd.toFixed(2) : null, dd == null ? '' : (dd <= 0 ? 'diff-pos' : 'diff-neg'), {background: bg, fontSize: '10px'});
+                diffTr.appendChild(tdF);
+                diffTr.appendChild(tdK);
+                diffTr.appendChild(tdD);
             });
             tbody.appendChild(diffTr);
         }
@@ -971,7 +805,7 @@ function renderChart() {
         c2.appendChild(b);
     });
     if (selChartMode === 'store') {
-        c2.appendChild(Object.assign(document.createElement('span'), {className: 'ctrl-lbl', textContent: '  Магазин:', style: 'margin-left:8px'}));
+        c2.appendChild(Object.assign(document.createElement('span'), {className: 'ctrl-lbl', textContent: ' Магазин:', style: 'margin-left:8px'}));
         sts.forEach(st => {
             const b = document.createElement('button');
             b.className = 'pill' + (st.name === selChartStore ? ' active' : '');
@@ -1030,25 +864,26 @@ function renderChart() {
             }) : color + '33',
             borderColor: color,
             borderWidth: isBar ? 0 : 2.5,
-            pointRadius: isSmallDataset ? 4 : 2,
-            pointHoverRadius: 7,
+            pointRadius: isSmallDataset ? 5 : 3,
+            pointHoverRadius: 9,
             tension: 0.25,
             fill: !isBar,
             spanGaps: true,
             datalabels: {
                 display: true,
                 color: '#1d1d1f',
-                backgroundColor: 'rgba(255,255,255,0.9)',
-                borderRadius: 4,
-                borderWidth: 1,
-                borderColor: color + '88',
-                padding: 6,
-                font: { size: 10, weight: '600' },
+                backgroundColor: 'rgba(255,255,255,0.97)',
+                borderRadius: 8,
+                borderWidth: 2,
+                borderColor: color + 'aa',
+                padding: 10,
+                font: { size: 12, weight: 'bold' },
                 formatter: value => value === null ? '' : (selChartMetric === 'delta' ? value.toFixed(2) : fmt(value)),
                 anchor: isBar ? 'end' : 'end',
                 align: isBar ? 'top' : 'top',
-                offset: isBar ? 4 : 8,
-                clamp: true
+                offset: 16,
+                clamp: true,
+                clip: false
             }
         });
     } else {
@@ -1062,21 +897,23 @@ function renderChart() {
                 borderColor: color,
                 backgroundColor: color + '22',
                 borderWidth: 2.5,
-                pointRadius: isSmallDataset ? 4 : 2,
-                pointHoverRadius: 7,
+                pointRadius: isSmallDataset ? 5 : 3,
+                pointHoverRadius: 9,
                 tension: 0.25,
                 fill: false,
                 spanGaps: true,
                 datalabels: {
                     display: true,
                     color: '#1d1d1f',
-                    backgroundColor: 'rgba(255,255,255,0.85)',
-                    borderRadius: 4,
-                    borderWidth: 1,
-                    borderColor: color + '88',
-                    padding: 6,
-                    font: { size: 10, weight: '600' },
-                    formatter: value => value === null ? '' : (selChartMetric === 'delta' ? value.toFixed(2) : fmt(value))
+                    backgroundColor: 'rgba(255,255,255,0.97)',
+                    borderRadius: 8,
+                    borderWidth: 2,
+                    borderColor: color + 'aa',
+                    padding: 10,
+                    font: { size: 12, weight: 'bold' },
+                    formatter: value => value === null ? '' : (selChartMetric === 'delta' ? value.toFixed(2) : fmt(value)),
+                    clamp: true,
+                    clip: false
                 }
             });
         });
