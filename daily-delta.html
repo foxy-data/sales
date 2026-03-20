@@ -597,7 +597,18 @@ async function init(){
         const rows=parseCSV(text);
         if(!rows.length)throw new Error('Порожній файл');
         detect(rows);
-        if(!stores.length)throw new Error('Не знайдено магазини');
+        if(!stores.length){
+            // Show debug info to understand CSV structure
+            const dbg=document.createElement('div');
+            dbg.style.cssText='background:#1d1d1f;color:#0f0;font-family:monospace;font-size:11px;padding:12px;border-radius:8px;margin:10px;white-space:pre;overflow-x:auto;max-height:400px;overflow-y:auto';
+            let txt='CSV рядки 0-5:\n';
+            rows.slice(0,6).forEach((r,i)=>txt+=`[${i}]: ${r.slice(0,12).map((c,j)=>`${j}="${c}"`).join(' | ')}\n`);
+            txt+='\nsubRow='+subRow+' storeRow='+storeRow;
+            dbg.textContent=txt;
+            document.getElementById('tabContent').innerHTML='';
+            document.getElementById('tabContent').appendChild(dbg);
+            throw new Error('Не знайдено магазини — дивись debug вище');
+        }
         renderFilters();
         render();
     }catch(e){
