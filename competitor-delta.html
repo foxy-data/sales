@@ -216,7 +216,7 @@ function detectStructure(csvRows){
         const gt=(g0[i]||'').trim();if(gt)curGroup=gt;
         const sub=(g1[i]||'').trim();if(!sub)continue;
         const isDelta=curGroup.toLowerCase().includes('дельт');
-        const isPct=/конвер|%/i.test(sub);
+        const isPct=!isDelta&&/конвер|%/i.test(sub); // дельта-конверсія — не %
         const key=curGroup+'§'+sub+'§'+i;
         allCols.push({key,group:curGroup,sub,colIdx:i,isDelta,isPct});
         let grp=colGroups.find(g=>g.name===curGroup);
@@ -569,28 +569,51 @@ function renderChart(){
 }
 
 // ── SUMMARY HELPERS ──
-// Знаходить групу КОМФІ і ФОКСТРОТ один раз після парсингу
-function getKomfGroup(){ return colGroups.find(g=>/комф|комб/i.test(g.name)); }
-function getFoksGroup(){ return colGroups.find(g=>/фокс/i.test(g.name)); }
+// Нормалізація назви для порівняння
+function ns(s){ return (s||'').toLowerCase().trim().replace(/\s+/g,' '); }
 
-// Для дельта-колонки:
-// 1. Знаходимо позицію цієї колонки в групі Дельта
-// 2. Беремо колонку з тієї самої позиції в КОМФІ і ФОКСТРОТ
-// 3. Рахуємо sum(КОМФІ) / sum(ФОКСТРОТ) за переданими рядками
+// Знаходить партнерську колонку в іншій групі за sub-назвою
+// groupTest — функція перевірки назви групи
+function findPartner(sub, groupTest){
+    const n=ns(sub);
+    return allCols.find(c=>groupTest(c.group) && ns(c.sub)===n) ||
+           allCols.find(c=>groupTest(c.group) && ns(c.sub).includes(n)) ||
+           allCols.find(c=>groupTest(c.group) && n.includes(ns(c.sub)) && ns(c.sub).length>1) ||
+           null;
+}
+
+// Визначає чи колонка — конверсія (має рахуватись як avg, а не sum/sum)
+function isConv(col){ return /конвер/i.test(col.sub); }
+
+// Для дельта-колонки рахує:
+// - якщо конверсія: avg(КОМФІ конв) / avg(ФОКС конв) за місяцями
+// - інакше: sum(КОМФІ) / sum(ФОКС)
 function calcDeltaRatio(col, rows){
-    const deltaGrp = colGroups.find(g=>g.cols.some(c=>c.key===col.key));
-    if(!deltaGrp) return null;
-    const pos = deltaGrp.cols.findIndex(c=>c.key===col.key);
-    const komfGrp = getKomfGroup();
-    const foksGrp = getFoksGroup();
-    if(!komfGrp||!foksGrp) return null;
-    const komfCol = komfGrp.cols[pos];
-    const foksCol = foksGrp.cols[pos];
+    if(!rows.length) return null;
+    // Знаходимо групу КОМФІ і ФОКСТРОТ за sub-назвою
+    const komfTest = g => /комф|комб/i.test(g);
+    const foksTest = g => /фокс/i.test(g);
+    const komfCol = findPartner(col.sub, komfTest);
+    const foksCol = findPartner(col.sub, foksTest);
     if(!komfCol||!foksCol) return null;
-    const komfSum = rows.reduce((s,r)=>s+(r.vals[komfCol.key]??0), 0);
-    const foksSum = rows.reduce((s,r)=>s+(r.vals[foksCol.key]??0), 0);
-    if(foksSum===0) return null;
-    return { ratio: komfSum/foksSum, komfSum, foksSum, komfName:komfGrp.name, foksName:foksGrp.name, colSub:col.sub };
+    const komfVals = rows.map(r=>r.vals[komfCol.key]).filter(v=>v!=null);
+    const foksVals = rows.map(r=>r.vals[foksCol.key]).filter(v=>v!=null);
+    if(!foksVals.length) return null;
+    let ratio, komfAgg, foksAgg;
+    if(isConv(col)){
+        // Конверсія — середнє значення
+        komfAgg = komfVals.reduce((a,b)=>a+b,0)/komfVals.length;
+        foksAgg = foksVals.reduce((a,b)=>a+b,0)/foksVals.length;
+        ratio = foksAgg!==0 ? komfAgg/foksAgg : null;
+    } else {
+        // Абсолютні — сума
+        komfAgg = komfVals.reduce((a,b)=>a+b,0);
+        foksAgg = foksVals.reduce((a,b)=>a+b,0);
+        ratio = foksAgg!==0 ? komfAgg/foksAgg : null;
+    }
+    if(ratio===null) return null;
+    const isAvgMode = isConv(col);
+    return { ratio, komfAgg, foksAgg, komfName:komfCol.group, foksName:foksCol.group, colSub:col.sub, isAvgMode };
 }
 
 // Звичайна агрегація для не-дельта колонок
@@ -649,13 +672,14 @@ function renderSummary(){
                 const r2=calcDeltaRatio(col,p2rows);
                 if(!r1&&!r2) return;
 
+                const fmtAgg=(r)=>r.isAvgMode?r.komfAgg.toFixed(2)+' / '+r.foksAgg.toFixed(2):fmt(r.komfAgg)+' / '+fmt(r.foksAgg);
+                const aggLabel=(r)=>r.isAvgMode?'Сер. '+r.komfName+' / '+r.foksName:r.komfName+' / '+r.foksName+' (сума)';
                 // П1
                 const yl1=document.createElement('div');yl1.style.cssText='font-size:10px;font-weight:700;color:#0071e3;margin-bottom:2px;display:flex;align-items:center;gap:4px';
                 yl1.innerHTML='<span class="p1-dot"></span>Період 1';rows2.appendChild(yl1);
                 if(r1){
-                    rows2.appendChild(mkSRow(r1.komfName+' (сума)',fmt(r1.komfSum)));
-                    rows2.appendChild(mkSRow(r1.foksName+' (сума)',fmt(r1.foksSum)));
-                    rows2.appendChild(mkSRow('Відношення ('+r1.colSub+')',r1.ratio.toFixed(2)));
+                    rows2.appendChild(mkSRow(aggLabel(r1),fmtAgg(r1)));
+                    rows2.appendChild(mkSRow('Відношення',r1.ratio.toFixed(2)));
                 } else { rows2.appendChild(mkSRow('дані відсутні','—')); }
 
                 const hr=document.createElement('hr');hr.className='summary-divider';rows2.appendChild(hr);
@@ -664,12 +688,11 @@ function renderSummary(){
                 const yl2=document.createElement('div');yl2.style.cssText='font-size:10px;font-weight:700;color:#34c759;margin-bottom:2px;display:flex;align-items:center;gap:4px';
                 yl2.innerHTML='<span class="p2-dot"></span>Період 2';rows2.appendChild(yl2);
                 if(r2){
-                    rows2.appendChild(mkSRow(r2.komfName+' (сума)',fmt(r2.komfSum)));
-                    rows2.appendChild(mkSRow(r2.foksName+' (сума)',fmt(r2.foksSum)));
-                    rows2.appendChild(mkSRow('Відношення ('+r2.colSub+')',r2.ratio.toFixed(2)));
+                    rows2.appendChild(mkSRow(aggLabel(r2),fmtAgg(r2)));
+                    rows2.appendChild(mkSRow('Відношення',r2.ratio.toFixed(2)));
                 } else { rows2.appendChild(mkSRow('дані відсутні','—')); }
 
-                // Відхилення між відношеннями (в одиницях, не в пп)
+                // Відхилення
                 const dRow=mkDeltaBadge(r1?.ratio??null, r2?.ratio??null, true);
                 if(dRow) rows2.appendChild(dRow);
 
@@ -709,9 +732,14 @@ function renderSummary(){
             if(col.isDelta){
                 const r=calcDeltaRatio(col,data);
                 if(!r) return;
-                rows2.appendChild(mkSRow(r.komfName+' (сума)',fmt(r.komfSum)));
-                rows2.appendChild(mkSRow(r.foksName+' (сума)',fmt(r.foksSum)));
-                rows2.appendChild(mkSRow('Відношення ('+r.colSub+')',r.ratio.toFixed(2)));
+                if(r.isAvgMode){
+                    rows2.appendChild(mkSRow('Сер. '+r.komfName, r.komfAgg.toFixed(2)));
+                    rows2.appendChild(mkSRow('Сер. '+r.foksName, r.foksAgg.toFixed(2)));
+                } else {
+                    rows2.appendChild(mkSRow(r.komfName+' (сума)',fmt(r.komfAgg)));
+                    rows2.appendChild(mkSRow(r.foksName+' (сума)',fmt(r.foksAgg)));
+                }
+                rows2.appendChild(mkSRow('Відношення',r.ratio.toFixed(2)));
             } else {
                 const vals=data.map(r=>r.vals[key]).filter(v=>v!=null);if(!vals.length)return;
                 if(col.isPct){ rows2.appendChild(mkSRow('Середнє',fmt(vals.reduce((a,b)=>a+b,0)/vals.length,true))); }
