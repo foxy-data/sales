@@ -570,16 +570,30 @@ function renderChart(){
 
 // ── SUMMARY HELPERS ──
 // Знаходить колонку-партнер за назвою sub в іншій групі
+// Порівнює нормалізовано (без пробілів, нижній регістр)
+function normSub(s){ return (s||'').toLowerCase().replace(/\s+/g,'').replace(/\./g,''); }
+
 function findPartnerCol(sub, groupKeyword){
-    return allCols.find(c=>c.sub.trim()===sub.trim() && c.group.toLowerCase().includes(groupKeyword.toLowerCase()));
+    const ns=normSub(sub);
+    // Спочатку точний збіг
+    let found=allCols.find(c=>normSub(c.sub)===ns && c.group.toLowerCase().includes(groupKeyword.toLowerCase()));
+    // Якщо не знайшли — пробуємо часткове включення sub
+    if(!found) found=allCols.find(c=>normSub(c.sub).includes(ns) && c.group.toLowerCase().includes(groupKeyword.toLowerCase()));
+    if(!found) found=allCols.find(c=>ns.includes(normSub(c.sub)) && normSub(c.sub).length>1 && c.group.toLowerCase().includes(groupKeyword.toLowerCase()));
+    return found||null;
 }
 
 // Для дельта-колонки рахує правильно: sum(КОМБІ) / sum(ФОКС) за набором рядків
 // Повертає {ratio, kombiSum, foksSum} або null
 function calcDeltaRatio(col, rows){
-    const kombiCol = findPartnerCol(col.sub, 'комб');
-    const foksCol  = findPartnerCol(col.sub, 'фокс');
-    if(!kombiCol || !foksCol) return null;
+    // Пробуємо знайти партнерів по різних варіантах назв груп
+    const kombiCol = findPartnerCol(col.sub, 'комф') || findPartnerCol(col.sub, 'комб') || findPartnerCol(col.sub, 'комбі');
+    const foksCol  = findPartnerCol(col.sub, 'фокс') || findPartnerCol(col.sub, 'foxtrot');
+    console.log('[calcDeltaRatio]', col.sub, col.group, '→ kombi:', kombiCol?.group, kombiCol?.sub, '/ foks:', foksCol?.group, foksCol?.sub);
+    if(!kombiCol || !foksCol) {
+        console.warn('[calcDeltaRatio] партнера не знайдено для', col.sub, '| groups:', [...new Set(allCols.map(c=>c.group))]);
+        return null;
+    }
     const kombiSum = rows.reduce((s,r)=>{ const v=r.vals[kombiCol.key]; return s+(v!=null?v:0); }, 0);
     const foksSum  = rows.reduce((s,r)=>{ const v=r.vals[foksCol.key];  return s+(v!=null?v:0); }, 0);
     if(foksSum===0) return null;
