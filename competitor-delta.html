@@ -85,9 +85,9 @@
         /* SUMMARY */
         .summary-panel{margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
         .summary-title{font-size:11px;font-weight:700;color:var(--text-sec);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
-        .summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+        .summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px}
         .summary-card{background:#f9f9fb;border-radius:12px;padding:10px 12px;border:1px solid var(--border)}
-        .summary-card-label{font-size:10px;color:var(--text-sec);font-weight:600;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .summary-card-label{font-size:10px;color:var(--text-sec);font-weight:600;margin-bottom:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
         .summary-rows{display:flex;flex-direction:column;gap:4px}
         .summary-row{display:flex;justify-content:space-between;align-items:center;gap:6px}
         .summary-row-lbl{font-size:10px;color:var(--text-sec);display:flex;align-items:center;gap:3px;white-space:nowrap}
@@ -215,8 +215,9 @@ function detectStructure(csvRows){
     for(let i=2;i<Math.max(g0.length,g1.length);i++){
         const gt=(g0[i]||'').trim();if(gt)curGroup=gt;
         const sub=(g1[i]||'').trim();if(!sub)continue;
-        const isDelta=curGroup.toLowerCase().includes('дельт');
-        const isPct=!isDelta&&/конвер|%/i.test(sub); // дельта-конверсія — не %
+        // Дельта: група або sub містить 'дельт'
+        const isDelta=/(дельт)/i.test(curGroup)||/(дельт)/i.test(sub);
+        const isPct=!isDelta&&/конвер|%/i.test(sub);
         const key=curGroup+'§'+sub+'§'+i;
         allCols.push({key,group:curGroup,sub,colIdx:i,isDelta,isPct});
         let grp=colGroups.find(g=>g.name===curGroup);
@@ -569,51 +570,65 @@ function renderChart(){
 }
 
 // ── SUMMARY HELPERS ──
-// Нормалізація назви для порівняння
 function ns(s){ return (s||'').toLowerCase().trim().replace(/\s+/g,' '); }
+function isConv(col){ return /конвер/i.test(col.sub)||/конвер/i.test(col.group); }
 
-// Знаходить партнерську колонку в іншій групі за sub-назвою
-// groupTest — функція перевірки назви групи
-function findPartner(sub, groupTest){
-    const n=ns(sub);
-    return allCols.find(c=>groupTest(c.group) && ns(c.sub)===n) ||
-           allCols.find(c=>groupTest(c.group) && ns(c.sub).includes(n)) ||
-           allCols.find(c=>groupTest(c.group) && n.includes(ns(c.sub)) && ns(c.sub).length>1) ||
-           null;
+// Знаходить партнерів для дельта-колонки.
+// Два випадки:
+// 1. Дельта-група (наприклад "ДЕЛЬТА", "ДЕЛЬТА КАТЕГОРІЙ"):
+//    партнери — колонки з тим самим sub у групах КОМФІ і ФОКСТРОТ
+// 2. Дельта-sub (наприклад sub="ДЕЛЬТА ПІКАП" у групі "АБСОЛЮТ ПІКАП"):
+//    партнери — інші sub у тій самій групі (ФОКСТРОТ і КОМФІ)
+function findDeltaPartners(col){
+    const grp = colGroups.find(g=>g.cols.some(c=>c.key===col.key));
+    if(!grp) return null;
+
+    // Випадок 2: дельта знаходиться в sub (не вся група — дельта)
+    if(!/(дельт)/i.test(grp.name)){
+        // Шукаємо в тій же групі колонки ФОКСТРОТ і КОМФІ
+        const foksCol = grp.cols.find(c=>!c.isDelta && /фокс/i.test(c.sub));
+        const komfCol = grp.cols.find(c=>!c.isDelta && /комф|комб/i.test(c.sub));
+        if(foksCol&&komfCol) return {komfCol,foksCol,komfName:grp.name+' (КОМФІ)',foksName:grp.name+' (ФОКСТРОТ)'};
+        // Fallback: перша і друга не-дельта колонка в групі
+        const nonDelta = grp.cols.filter(c=>!c.isDelta);
+        if(nonDelta.length>=2) return {foksCol:nonDelta[0],komfCol:nonDelta[1],komfName:grp.name+' '+nonDelta[1].sub,foksName:grp.name+' '+nonDelta[0].sub};
+        return null;
+    }
+
+    // Випадок 1: вся група — дельта, шукаємо партнерів в інших групах за sub-назвою
+    const sub = ns(col.sub);
+    // Група КОМФІ: містить 'комф' або 'комб' але не 'дельт'
+    const komfGrps = colGroups.filter(g=>!/(дельт)/i.test(g.name)&&(/комф|комб/i.test(g.name)));
+    // Група ФОКСТРОТ: містить 'фокс' але не 'дельт'
+    const foksGrps = colGroups.filter(g=>!/(дельт)/i.test(g.name)&&(/фокс/i.test(g.name)));
+    // Шукаємо в усіх відповідних групах
+    let komfCol=null, foksCol=null;
+    for(const g of komfGrps){ komfCol=g.cols.find(c=>ns(c.sub)===sub); if(komfCol)break; }
+    for(const g of foksGrps){ foksCol=g.cols.find(c=>ns(c.sub)===sub); if(foksCol)break; }
+    if(!komfCol||!foksCol) return null;
+    return {komfCol,foksCol,komfName:komfCol.group,foksName:foksCol.group};
 }
 
-// Визначає чи колонка — конверсія (має рахуватись як avg, а не sum/sum)
-function isConv(col){ return /конвер/i.test(col.sub); }
-
-// Для дельта-колонки рахує:
-// - якщо конверсія: avg(КОМФІ конв) / avg(ФОКС конв) за місяцями
-// - інакше: sum(КОМФІ) / sum(ФОКС)
 function calcDeltaRatio(col, rows){
     if(!rows.length) return null;
-    // Знаходимо групу КОМФІ і ФОКСТРОТ за sub-назвою
-    const komfTest = g => /комф|комб/i.test(g);
-    const foksTest = g => /фокс/i.test(g);
-    const komfCol = findPartner(col.sub, komfTest);
-    const foksCol = findPartner(col.sub, foksTest);
-    if(!komfCol||!foksCol) return null;
+    const partners = findDeltaPartners(col);
+    if(!partners) return null;
+    const {komfCol,foksCol,komfName,foksName} = partners;
     const komfVals = rows.map(r=>r.vals[komfCol.key]).filter(v=>v!=null);
     const foksVals = rows.map(r=>r.vals[foksCol.key]).filter(v=>v!=null);
-    if(!foksVals.length) return null;
-    let ratio, komfAgg, foksAgg;
-    if(isConv(col)){
-        // Конверсія — середнє значення
+    if(!foksVals.length||!komfVals.length) return null;
+    let komfAgg, foksAgg;
+    const avgMode = isConv(col);
+    if(avgMode){
         komfAgg = komfVals.reduce((a,b)=>a+b,0)/komfVals.length;
         foksAgg = foksVals.reduce((a,b)=>a+b,0)/foksVals.length;
-        ratio = foksAgg!==0 ? komfAgg/foksAgg : null;
     } else {
-        // Абсолютні — сума
         komfAgg = komfVals.reduce((a,b)=>a+b,0);
         foksAgg = foksVals.reduce((a,b)=>a+b,0);
-        ratio = foksAgg!==0 ? komfAgg/foksAgg : null;
     }
+    const ratio = foksAgg!==0 ? komfAgg/foksAgg : null;
     if(ratio===null) return null;
-    const isAvgMode = isConv(col);
-    return { ratio, komfAgg, foksAgg, komfName:komfCol.group, foksName:foksCol.group, colSub:col.sub, isAvgMode };
+    return {ratio,komfAgg,foksAgg,komfName,foksName,colSub:col.sub,isAvgMode:avgMode};
 }
 
 // Звичайна агрегація для не-дельта колонок
