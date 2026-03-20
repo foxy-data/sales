@@ -569,35 +569,28 @@ function renderChart(){
 }
 
 // ── SUMMARY HELPERS ──
-// Знаходить партнерську колонку за ПОЗИЦІЄЮ в групі (надійніше ніж по назві sub)
-// delta col має ту саму позицію що і відповідна col у ФОКСТРОТ/КОМФІ
-function findPartnerByPosition(deltaCol, groupKeyword){
-    // Знайти групу дельти
-    const deltaGrp=colGroups.find(g=>g.cols.some(c=>c.key===deltaCol.key));
-    if(!deltaGrp) return null;
-    const posInDelta=deltaGrp.cols.findIndex(c=>c.key===deltaCol.key);
-    // Знайти цільову групу
-    const targetGrp=colGroups.find(g=>g.name.toLowerCase().includes(groupKeyword.toLowerCase()));
-    if(!targetGrp) return null;
-    // Взяти колонку за тією ж позицією (або за схожою назвою sub як fallback)
-    return targetGrp.cols[posInDelta] || targetGrp.cols.find(c=>
-        c.sub.toLowerCase().replace(/\s/g,'') === deltaCol.sub.toLowerCase().replace(/\s/g,'')
-    ) || null;
-}
+// Знаходить групу КОМФІ і ФОКСТРОТ один раз після парсингу
+function getKomfGroup(){ return colGroups.find(g=>/комф|комб/i.test(g.name)); }
+function getFoksGroup(){ return colGroups.find(g=>/фокс/i.test(g.name)); }
 
-// Для дельта-колонки рахує правильно: sum(КОМФІ) / sum(ФОКСТРОТ) за набором рядків
+// Для дельта-колонки:
+// 1. Знаходимо позицію цієї колонки в групі Дельта
+// 2. Беремо колонку з тієї самої позиції в КОМФІ і ФОКСТРОТ
+// 3. Рахуємо sum(КОМФІ) / sum(ФОКСТРОТ) за переданими рядками
 function calcDeltaRatio(col, rows){
-    // Знаходимо групи з ключовими словами (гнучко)
-    const komfGrp = colGroups.find(g=>g.name.toLowerCase().includes('комф') || g.name.toLowerCase().includes('комб'));
-    const foksGrp = colGroups.find(g=>g.name.toLowerCase().includes('фокс'));
-    if(!komfGrp || !foksGrp){ return null; }
-    const kombiCol = findPartnerByPosition(col, komfGrp.name);
-    const foksCol  = findPartnerByPosition(col, foksGrp.name);
-    if(!kombiCol || !foksCol){ return null; }
-    const kombiSum = rows.reduce((s,r)=>{ const v=r.vals[kombiCol.key]; return s+(v!=null?v:0); }, 0);
-    const foksSum  = rows.reduce((s,r)=>{ const v=r.vals[foksCol.key];  return s+(v!=null?v:0); }, 0);
+    const deltaGrp = colGroups.find(g=>g.cols.some(c=>c.key===col.key));
+    if(!deltaGrp) return null;
+    const pos = deltaGrp.cols.findIndex(c=>c.key===col.key);
+    const komfGrp = getKomfGroup();
+    const foksGrp = getFoksGroup();
+    if(!komfGrp||!foksGrp) return null;
+    const komfCol = komfGrp.cols[pos];
+    const foksCol = foksGrp.cols[pos];
+    if(!komfCol||!foksCol) return null;
+    const komfSum = rows.reduce((s,r)=>s+(r.vals[komfCol.key]??0), 0);
+    const foksSum = rows.reduce((s,r)=>s+(r.vals[foksCol.key]??0), 0);
     if(foksSum===0) return null;
-    return { ratio: kombiSum/foksSum, kombiSum, foksSum, kombiColName:kombiCol.group, foksColName:foksCol.group };
+    return { ratio: komfSum/foksSum, komfSum, foksSum, komfName:komfGrp.name, foksName:foksGrp.name, colSub:col.sub };
 }
 
 // Звичайна агрегація для не-дельта колонок
@@ -615,8 +608,8 @@ function mkDeltaBadge(v1, v2, isRatio){
     const arrow=cls==='up'?'▲':cls==='down'?'▼':'→';
     let txt;
     if(isRatio){
-        // ratio: показуємо різницю в пп (процентних пунктах відносно відношення)
-        txt=(diff>0?'+':'')+(diff*100).toFixed(2)+' пп';
+        // ratio: різниця між двома коефіцієнтами (напр. 2.94 - 2.52 = +0.42)
+        txt=(diff>0?'+':'')+diff.toFixed(2);
         if(pct!=null) txt+=' ('+pct.toFixed(1)+'%)';
     } else {
         txt=(diff>0?'+':'')+fmt(Math.abs(diff));
@@ -656,17 +649,14 @@ function renderSummary(){
                 const r2=calcDeltaRatio(col,p2rows);
                 if(!r1&&!r2) return;
 
-                const fmtRatio=v=>v!=null?(v*100).toFixed(2)+'%':'—';
-                const fmtSum=v=>v!=null?fmt(v):'—';
-
                 // П1
                 const yl1=document.createElement('div');yl1.style.cssText='font-size:10px;font-weight:700;color:#0071e3;margin-bottom:2px;display:flex;align-items:center;gap:4px';
                 yl1.innerHTML='<span class="p1-dot"></span>Період 1';rows2.appendChild(yl1);
                 if(r1){
-                    rows2.appendChild(mkSRow(r1.kombiColName+' (сума)',fmtSum(r1.kombiSum)));
-                    rows2.appendChild(mkSRow(r1.foksColName+' (сума)',fmtSum(r1.foksSum)));
-                    rows2.appendChild(mkSRow('Відношення',fmtRatio(r1.ratio)));
-                } else { rows2.appendChild(mkSRow('—','—')); }
+                    rows2.appendChild(mkSRow(r1.komfName+' (сума)',fmt(r1.komfSum)));
+                    rows2.appendChild(mkSRow(r1.foksName+' (сума)',fmt(r1.foksSum)));
+                    rows2.appendChild(mkSRow('Відношення ('+r1.colSub+')',r1.ratio.toFixed(2)));
+                } else { rows2.appendChild(mkSRow('дані відсутні','—')); }
 
                 const hr=document.createElement('hr');hr.className='summary-divider';rows2.appendChild(hr);
 
@@ -674,12 +664,12 @@ function renderSummary(){
                 const yl2=document.createElement('div');yl2.style.cssText='font-size:10px;font-weight:700;color:#34c759;margin-bottom:2px;display:flex;align-items:center;gap:4px';
                 yl2.innerHTML='<span class="p2-dot"></span>Період 2';rows2.appendChild(yl2);
                 if(r2){
-                    rows2.appendChild(mkSRow(r2.kombiColName+' (сума)',fmtSum(r2.kombiSum)));
-                    rows2.appendChild(mkSRow(r2.foksColName+' (сума)',fmtSum(r2.foksSum)));
-                    rows2.appendChild(mkSRow('Відношення',fmtRatio(r2.ratio)));
-                } else { rows2.appendChild(mkSRow('—','—')); }
+                    rows2.appendChild(mkSRow(r2.komfName+' (сума)',fmt(r2.komfSum)));
+                    rows2.appendChild(mkSRow(r2.foksName+' (сума)',fmt(r2.foksSum)));
+                    rows2.appendChild(mkSRow('Відношення ('+r2.colSub+')',r2.ratio.toFixed(2)));
+                } else { rows2.appendChild(mkSRow('дані відсутні','—')); }
 
-                // Відхилення між відношеннями
+                // Відхилення між відношеннями (в одиницях, не в пп)
                 const dRow=mkDeltaBadge(r1?.ratio??null, r2?.ratio??null, true);
                 if(dRow) rows2.appendChild(dRow);
 
@@ -719,9 +709,9 @@ function renderSummary(){
             if(col.isDelta){
                 const r=calcDeltaRatio(col,data);
                 if(!r) return;
-                rows2.appendChild(mkSRow(r.kombiColName+' (сума)',fmt(r.kombiSum)));
-                rows2.appendChild(mkSRow(r.foksColName+' (сума)',fmt(r.foksSum)));
-                rows2.appendChild(mkSRow('Відношення',(r.ratio*100).toFixed(2)+'%'));
+                rows2.appendChild(mkSRow(r.komfName+' (сума)',fmt(r.komfSum)));
+                rows2.appendChild(mkSRow(r.foksName+' (сума)',fmt(r.foksSum)));
+                rows2.appendChild(mkSRow('Відношення ('+r.colSub+')',r.ratio.toFixed(2)));
             } else {
                 const vals=data.map(r=>r.vals[key]).filter(v=>v!=null);if(!vals.length)return;
                 if(col.isPct){ rows2.appendChild(mkSRow('Середнє',fmt(vals.reduce((a,b)=>a+b,0)/vals.length,true))); }
