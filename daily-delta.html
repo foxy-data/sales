@@ -34,33 +34,40 @@
         .pill.active{background:#1d1d1f;color:#fff}
 
         /* TABLE */
-        .table-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:14px}
+        .table-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+        .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
         .table-hint{font-size:11px;color:var(--text-sec);padding:8px 12px;border-bottom:1px solid #f2f2f4;background:#fafafa;border-radius:16px 16px 0 0}
         .table-hint .hl{color:var(--accent);font-weight:600}
-        table{border-collapse:collapse;width:100%}
-        th,td{padding:4px 6px;border-bottom:1px solid #f2f2f4;font-size:11px;text-align:right;white-space:nowrap}
-        th{background:white;font-size:9px;font-weight:700;color:var(--text-sec);text-transform:uppercase;border-bottom:2px solid var(--border);position:sticky;top:0;z-index:10}
+        table{border-collapse:collapse;min-width:100%}
+        th,td{padding:4px 7px;border-bottom:1px solid #f2f2f4;font-size:11px;text-align:right;white-space:nowrap}
+        /* Sticky header — two rows */
+        thead{position:sticky;top:0;z-index:20}
+        th.grp{text-align:center;font-size:9px;font-weight:800;letter-spacing:.06em;color:#fff;border-bottom:1px solid rgba(255,255,255,0.2);height:22px}
+        th.sub{font-size:9px;font-weight:700;color:rgba(255,255,255,0.85);text-transform:uppercase;height:20px;border-bottom:2px solid rgba(0,0,0,0.15)}
         /* Frozen date cols */
-        td.c-fix,th.c-fix{position:sticky;background:white;z-index:5;text-align:left}
-        th.c-fix{z-index:11}
-        td.c-date{left:0;min-width:70px;font-size:10px;font-weight:600;color:var(--text-sec)}
-        th.c-date{left:0}
-        td.c-dow{left:70px;min-width:46px;font-size:10px;color:var(--text-sec);border-right:1px solid #e8e8ec;box-shadow:4px 0 8px -2px rgba(0,0,0,.06)}
-        th.c-dow{left:70px;border-right:1px solid #e8e8ec}
-        /* Group headers */
-        th.grp{text-align:center;background:#f2f2f7;font-size:9px;font-weight:800;letter-spacing:.06em;color:#666;border-bottom:1px solid #e0e0e8}
-        th.grp.sticky-grp{position:sticky;top:0;z-index:10}
-        th.grp-sep,td.grp-sep{border-left:2px solid #d0d0da!important}
-        /* Delta coloring */
-        .dpos{color:#1a7f37;font-weight:700}
-        .dneg{color:#c0392b;font-weight:700}
-        /* Weekend rows */
+        th.c-date,td.c-date{position:sticky;left:0;z-index:5;text-align:left;min-width:54px;width:54px;font-size:10px;font-weight:600}
+        th.c-date{z-index:25;background:inherit}
+        td.c-date{background:var(--card);color:var(--text-sec)}
+        th.c-dow,td.c-dow{position:sticky;left:54px;z-index:5;text-align:left;min-width:36px;width:36px;font-size:10px;border-right:2px solid rgba(0,0,0,0.12);box-shadow:3px 0 6px -2px rgba(0,0,0,.08)}
+        th.c-dow{z-index:25;background:inherit}
+        td.c-dow{background:var(--card);color:var(--text-sec)}
+        /* Store color bands */
+        .sc0{background:#1a56db}.sc1{background:#0e7490}.sc2{background:#6b21a8}.sc3{background:#9d174d}.sc4{background:#065f46}.sc5{background:#92400e}.sc6{background:#1e40af}.sc7{background:#7c3aed}
         tr.weekend td{background:#fff8f0}
-        tr.weekend td.c-fix{background:#fff8f0}
-        /* Week separator */
+        tr.weekend td.c-date,tr.weekend td.c-dow{background:#fff8f0}
         tr.week-start td{border-top:2px solid #d0d0da!important}
-        /* Total row */
-        tr.total-row td{background:#f0f4ff;font-weight:700;border-top:2px solid #b0c0e0}
+        /* Delta color scale: <1 = good (green), >1 = bad (red), gradient */
+        .d-great{color:#1a7f37;font-weight:700}
+        .d-good{color:#2d9e5a;font-weight:600}
+        .d-ok{color:#6e6e73;font-weight:600}
+        .d-warn{color:#c05000;font-weight:600}
+        .d-bad{color:#c0392b;font-weight:700}
+        /* Total/sum row */
+        tr.total-row td{background:#f0f4ff;font-weight:700;font-size:11px;border-top:2px solid #b0c0e0}
+        tr.total-row td.c-date,tr.total-row td.c-dow{background:#e8f0fe}
+        /* Chart */
+        .chart-wrap{position:relative;height:340px;padding:16px}
+        @media(max-width:600px){.chart-wrap{height:240px}}
 
         .status-box{padding:40px;text-align:center;color:var(--text-sec);font-size:14px}
         .status-box.error{color:#ff3b30}
@@ -72,6 +79,7 @@
         .badge-we{background:rgba(255,149,0,.12);color:#b85000;padding:2px 6px;border-radius:5px;font-size:10px;font-weight:700}
         .badge-wk{background:rgba(88,86,214,.10);color:#4342a8;padding:2px 6px;border-radius:5px;font-size:10px;font-weight:700}
     </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 <div class="top-bar">
@@ -85,6 +93,8 @@
     <button class="tab active" onclick="switchTab('table')">📋 Таблиця</button>
     <button class="tab" onclick="switchTab('weekday')">📅 Пн–Чт / Пт–Нд</button>
     <button class="tab" onclick="switchTab('weekly')">📆 По тижнях</button>
+    <button class="tab" onclick="switchTab('monthly')">📅 По місяцях</button>
+    <button class="tab" onclick="switchTab('chart')">📈 Динаміка</button>
 </div>
 
 <div class="filters-wrap" id="filtersWrap" style="display:none">
@@ -302,6 +312,21 @@ function renderPills(id,items,selSet,color,label,onclick){
     });
 }
 
+function deltaClass(d){
+    if(d===null||d===undefined)return'';
+    if(d<0.9)return'd-great';
+    if(d<1.0)return'd-good';
+    if(d<=1.1)return'd-ok';
+    if(d<=1.3)return'd-warn';
+    return'd-bad';
+}
+// store color
+const STORE_BG=['#eff6ff','#ecfeff','#faf5ff','#fdf2f8','#ecfdf5','#fffbeb','#eff6ff','#f5f3ff'];
+const STORE_HDR=['#1a56db','#0e7490','#6b21a8','#9d174d','#065f46','#92400e','#1e40af','#7c3aed'];
+
+function mkTh(text,cls,extra){const t=document.createElement('th');t.textContent=text;if(cls)t.className=cls;if(extra)Object.assign(t.style,extra);return t;}
+function mkTd(text,cls,extra){const t=document.createElement('td');t.textContent=text||'—';if(cls)t.className=cls;if(extra)Object.assign(t.style,extra);return t;}
+
 // ── TABLE TAB ──
 function renderTable(){
     const cont=document.getElementById('tabContent');
@@ -311,98 +336,76 @@ function renderTable(){
 
     const card=document.createElement('div');card.className='table-card';
     const hint=document.createElement('div');hint.className='table-hint';
-    hint.innerHTML='Пн–Чт — <span class="hl">звичайні дні</span> | Пт–Нд — <span style="color:#ff9500;font-weight:600">вихідні</span>';
+    hint.innerHTML='Пн–Чт — <span class="hl">будні</span> | Пт–Нд — <span style="color:#ff9500;font-weight:600">вихідні</span> | Δ: <span class="d-great">&#60;0.9</span> <span class="d-good">0.9–1.0</span> <span class="d-ok">~1.0</span> <span class="d-warn">1.1–1.3</span> <span class="d-bad">&#62;1.3</span>';
     card.appendChild(hint);
-    const wrap=document.createElement('div');wrap.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;';
-    card.appendChild(wrap);
 
+    const wrap=document.createElement('div');wrap.className='table-wrap';
     const tbl=document.createElement('table');
     const thead=document.createElement('thead');
 
-    // Row 1: group headers
+    // Row 1 — store name headers (colored bg)
     const trG=document.createElement('tr');
-    const thD=document.createElement('th');thD.className='c-fix c-date grp sticky-grp';thD.rowSpan=2;thD.textContent='Дата';trG.appendChild(thD);
-    const thW=document.createElement('th');thW.className='c-fix c-dow grp sticky-grp';thW.rowSpan=2;thW.textContent='День';trG.appendChild(thW);
+    const thDate=mkTh('Дата','c-date grp');thDate.rowSpan=2;thDate.style.background='#374151';thDate.style.color='#fff';trG.appendChild(thDate);
+    const thDow=mkTh('День','c-dow grp');thDow.rowSpan=2;thDow.style.background='#374151';thDow.style.color='#fff';trG.appendChild(thDow);
     sts.forEach((st,i)=>{
-        const th=document.createElement('th');th.className='grp sticky-grp';th.colSpan=3;th.textContent=st.name;
-        if(i>0)th.classList.add('grp-sep');trG.appendChild(th);
+        const hdr=STORE_HDR[i%STORE_HDR.length];
+        const th=mkTh(st.name,'grp',{background:hdr,color:'#fff',borderLeft:i>0?'2px solid rgba(255,255,255,0.3)':''});
+        th.colSpan=3;th.title=st.name;trG.appendChild(th);
     });
-    // Total grp
-    const thT=document.createElement('th');thT.className='grp sticky-grp grp-sep';thT.colSpan=3;thT.textContent='ЗАГАЛОМ';trG.appendChild(thT);
     thead.appendChild(trG);
 
-    // Row 2: sub-col headers
+    // Row 2 — sub-col headers
     const trH=document.createElement('tr');
     sts.forEach((st,i)=>{
+        const hdr=STORE_HDR[i%STORE_HDR.length];
         ['Фокс','Комфі','Δ'].forEach((lbl,j)=>{
-            const th=document.createElement('th');th.textContent=lbl;
-            if(j===0&&i>0)th.classList.add('grp-sep');trH.appendChild(th);
+            const th=mkTh(lbl,'sub',{background:hdr,borderLeft:j===0&&i>0?'2px solid rgba(255,255,255,0.3)':''});
+            trH.appendChild(th);
         });
-    });
-    ['Фокс','Комфі','Δ'].forEach((lbl,j)=>{
-        const th=document.createElement('th');th.textContent=lbl;
-        if(j===0)th.classList.add('grp-sep');trH.appendChild(th);
     });
     thead.appendChild(trH);tbl.appendChild(thead);
 
     const tbody=document.createElement('tbody');
     let prevWeek=null;
-    // Totals
-    let totFoks=0,totKomf=0;
 
     data.forEach(r=>{
         const tr=document.createElement('tr');
         if(r.isWE)tr.classList.add('weekend');
         if(r.week&&r.week!==prevWeek){tr.classList.add('week-start');prevWeek=r.week;}
 
-        const tdD=document.createElement('td');tdD.className='c-fix c-date';tdD.textContent=fmtDate(r.date);tr.appendChild(tdD);
-        const tdW=document.createElement('td');tdW.className='c-fix c-dow';
-        tdW.textContent=r.dowName?r.dowName.slice(0,2):'';tr.appendChild(tdW);
+        tr.appendChild(mkTd(fmtDate(r.date),'c-fix c-date'));
+        const dow=r.dowName?r.dowName.slice(0,2):'';
+        tr.appendChild(mkTd(dow,'c-fix c-dow'));
 
-        let rowFoks=0,rowKomf=0;
         sts.forEach((st,i)=>{
+            const bg=STORE_BG[i%STORE_BG.length];
             const v=r.storeVals[st.name]||{};
             const f=v.foks??null,k=v.komf??null;
-            const d=(f!=null&&k!=null&&f!==0)?k/f:v.delta;
-            if(f!=null)rowFoks+=f;if(k!=null)rowKomf+=k;
-            const tdF=document.createElement('td');tdF.textContent=fmt(f);if(i>0)tdF.classList.add('grp-sep');tr.appendChild(tdF);
-            const tdK=document.createElement('td');tdK.textContent=fmt(k);tr.appendChild(tdK);
-            const tdD2=document.createElement('td');
-            if(d!=null){tdD2.textContent=d.toFixed(2);tdD2.className=d>1?'dpos':d<1?'dneg':'';}else tdD2.textContent='—';
-            tr.appendChild(tdD2);
+            const d=v.delta??((f!=null&&k!=null&&f!==0)?k/f:null);
+            const sep=i>0?'border-left:2px solid #d0d0da':'';
+            const tdF=mkTd(fmt(f),'',{background:bg,borderLeft:i>0?'2px solid #d0d0da':''});tr.appendChild(tdF);
+            const tdK=mkTd(fmt(k),'',{background:bg});tr.appendChild(tdK);
+            const tdD=mkTd(d!=null?d.toFixed(2):null,deltaClass(d),{background:bg});tr.appendChild(tdD);
         });
-        totFoks+=rowFoks;totKomf+=rowKomf;
-        // Total cols
-        const totD=rowFoks>0?rowKomf/rowFoks:null;
-        const tfF=document.createElement('td');tfF.textContent=fmt(rowFoks);tfF.classList.add('grp-sep');tr.appendChild(tfF);
-        const tfK=document.createElement('td');tfK.textContent=fmt(rowKomf);tr.appendChild(tfK);
-        const tfD=document.createElement('td');
-        if(totD!=null){tfD.textContent=totD.toFixed(2);tfD.className=totD>1?'dpos':totD<1?'dneg':'';}else tfD.textContent='—';
-        tr.appendChild(tfD);
-
         tbody.appendChild(tr);
     });
 
-    // Total row
+    // TOTAL ROW — per store
     const trTot=document.createElement('tr');trTot.className='total-row';
-    const tdTotDate=document.createElement('td');tdTotDate.className='c-fix c-date';tdTotDate.textContent='РАЗОМ';trTot.appendChild(tdTotDate);
-    const tdTotDow=document.createElement('td');tdTotDow.className='c-fix c-dow';trTot.appendChild(tdTotDow);
-    // Per store totals
+    trTot.appendChild(mkTd('РАЗОМ','c-fix c-date'));
+    trTot.appendChild(mkTd('','c-fix c-dow'));
     sts.forEach((st,i)=>{
         let sf=0,sk=0;
         data.forEach(r=>{const v=r.storeVals[st.name]||{};if(v.foks!=null)sf+=v.foks;if(v.komf!=null)sk+=v.komf;});
         const sd=sf>0?sk/sf:null;
-        const t1=document.createElement('td');t1.textContent=fmt(sf);if(i>0)t1.classList.add('grp-sep');trTot.appendChild(t1);
-        const t2=document.createElement('td');t2.textContent=fmt(sk);trTot.appendChild(t2);
-        const t3=document.createElement('td');if(sd!=null){t3.textContent=sd.toFixed(2);t3.className=sd>1?'dpos':sd<1?'dneg':'';}else t3.textContent='—';trTot.appendChild(t3);
+        const bg=STORE_BG[i%STORE_BG.length];
+        trTot.appendChild(mkTd(fmt(sf),'',{background:bg,borderLeft:i>0?'2px solid #d0d0da':'',fontWeight:'700'}));
+        trTot.appendChild(mkTd(fmt(sk),'',{background:bg,fontWeight:'700'}));
+        trTot.appendChild(mkTd(sd!=null?sd.toFixed(2):null,deltaClass(sd),{background:bg,fontWeight:'700'}));
     });
-    const gd=totFoks>0?totKomf/totFoks:null;
-    const g1=document.createElement('td');g1.textContent=fmt(totFoks);g1.classList.add('grp-sep');trTot.appendChild(g1);
-    const g2=document.createElement('td');g2.textContent=fmt(totKomf);trTot.appendChild(g2);
-    const g3=document.createElement('td');if(gd!=null){g3.textContent=gd.toFixed(2);g3.className=gd>1?'dpos':gd<1?'dneg':'';}else g3.textContent='—';trTot.appendChild(g3);
     tbody.appendChild(trTot);
 
-    tbl.appendChild(tbody);wrap.appendChild(tbl);
+    tbl.appendChild(tbody);wrap.appendChild(tbl);card.appendChild(wrap);
     cont.innerHTML='';cont.appendChild(card);
 }
 
@@ -427,7 +430,7 @@ function renderWeekday(){
     const hint=document.createElement('div');hint.className='table-hint';
     hint.innerHTML='<span class="badge-wd">Пн–Чт</span> та <span class="badge-we">Пт–Нд</span> — суми за кожен тиждень';
     card.appendChild(hint);
-    const wrap=document.createElement('div');wrap.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;';
+    const wrap=document.createElement('div');wrap.className='table-wrap';
 
     const tbl=document.createElement('table');
     const thead=document.createElement('thead');
@@ -514,7 +517,7 @@ function renderWeekly(){
     const hint=document.createElement('div');hint.className='table-hint';
     hint.innerHTML='<span class="badge-wk">Тиждень</span> — загальна сума за весь тиждень по кожному магазину';
     card.appendChild(hint);
-    const wrap=document.createElement('div');wrap.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;';
+    const wrap=document.createElement('div');wrap.className='table-wrap';
 
     const tbl=document.createElement('table');
     const thead=document.createElement('thead');
@@ -550,12 +553,12 @@ function renderWeekly(){
             const d=f>0?k/f:null;
             const t1=document.createElement('td');t1.textContent=fmt(f);if(i>0)t1.classList.add('grp-sep');tr.appendChild(t1);
             const t2=document.createElement('td');t2.textContent=fmt(k);tr.appendChild(t2);
-            const t3=document.createElement('td');if(d!=null){t3.textContent=d.toFixed(2);t3.className=d>1?'dpos':d<1?'dneg':'';}else t3.textContent='—';tr.appendChild(t3);
+            const t3=document.createElement('td');if(d!=null){t3.textContent=d.toFixed(2);t3.className=deltaClass(d);}else t3.textContent='—';tr.appendChild(t3);
         });
         const gd=totF>0?totK/totF:null;
         const g1=document.createElement('td');g1.textContent=fmt(totF);g1.classList.add('grp-sep');tr.appendChild(g1);
         const g2=document.createElement('td');g2.textContent=fmt(totK);tr.appendChild(g2);
-        const g3=document.createElement('td');if(gd!=null){g3.textContent=gd.toFixed(2);g3.className=gd>1?'dpos':gd<1?'dneg':'';}else g3.textContent='—';tr.appendChild(g3);
+        const g3=document.createElement('td');if(gd!=null){g3.textContent=gd.toFixed(2);g3.className=deltaClass(gd);}else g3.textContent='—';tr.appendChild(g3);
         tbody.appendChild(tr);
     });
     tbl.appendChild(tbody);wrap.appendChild(tbl);card.appendChild(wrap);
@@ -565,13 +568,167 @@ function renderWeekly(){
 function render(){
     if(activeTab==='table')renderTable();
     else if(activeTab==='weekday')renderWeekday();
-    else renderWeekly();
+    else if(activeTab==='weekly')renderWeekly();
+    else if(activeTab==='monthly')renderMonthly();
+    else renderChart();
 }
 
+// ── MONTHLY TAB ──
+function renderMonthly(){
+    const cont=document.getElementById('tabContent');
+    const data=activeData();
+    const sts=activeStores();
+    if(!data.length){cont.innerHTML='<div class="table-card"><div class="status-box">Немає даних</div></div>';return;}
+    // Group by year+month
+    const mMap=new Map();
+    data.forEach(r=>{
+        const k=r.year+'_'+String(r.month).padStart(2,'0');
+        if(!mMap.has(k))mMap.set(k,{year:r.year,month:r.month,rows:[]});
+        mMap.get(k).rows.push(r);
+    });
+    const card=document.createElement('div');card.className='table-card';
+    const hint=document.createElement('div');hint.className='table-hint';
+    hint.innerHTML='Сума за кожен місяць по кожному магазину';
+    card.appendChild(hint);
+    const wrap=document.createElement('div');wrap.className='table-wrap';
+    const tbl=document.createElement('table');
+    const thead=document.createElement('thead');
+    const trG=document.createElement('tr');
+    const thY=mkTh('Рік','c-date grp');thY.rowSpan=2;thY.style.cssText='background:#374151;color:#fff;position:sticky;left:0;z-index:25';trG.appendChild(thY);
+    const thM=mkTh('Місяць','c-dow grp');thM.rowSpan=2;thM.style.cssText='background:#374151;color:#fff;position:sticky;left:54px;z-index:25';trG.appendChild(thM);
+    sts.forEach((st,i)=>{
+        const th=mkTh(st.name,'grp',{background:STORE_HDR[i%STORE_HDR.length],color:'#fff',borderLeft:i>0?'2px solid rgba(255,255,255,0.3)':''});
+        th.colSpan=3;trG.appendChild(th);
+    });
+    thead.appendChild(trG);
+    const trH=document.createElement('tr');
+    sts.forEach((st,i)=>{
+        ['Фокс','Комфі','Δ'].forEach((l,j)=>{
+            const th=mkTh(l,'sub',{background:STORE_HDR[i%STORE_HDR.length],borderLeft:j===0&&i>0?'2px solid rgba(255,255,255,0.3)':''});
+            trH.appendChild(th);
+        });
+    });
+    thead.appendChild(trH);tbl.appendChild(thead);
+    const tbody=document.createElement('tbody');
+    [...mMap.keys()].sort().forEach(k=>{
+        const{year,month,rows}=mMap.get(k);
+        const tr=document.createElement('tr');
+        const tdY=mkTd(String(year),'c-fix c-date');tr.appendChild(tdY);
+        const tdM=mkTd(MONTHS_UK[month-1].slice(0,3),'c-fix c-dow');tr.appendChild(tdM);
+        sts.forEach((st,i)=>{
+            const bg=STORE_BG[i%STORE_BG.length];
+            let sf=0,sk=0;
+            rows.forEach(r=>{const v=r.storeVals[st.name]||{};if(v.foks!=null)sf+=v.foks;if(v.komf!=null)sk+=v.komf;});
+            const sd=sf>0?sk/sf:null;
+            tr.appendChild(mkTd(fmt(sf),'',{background:bg,borderLeft:i>0?'2px solid #d0d0da':''}));
+            tr.appendChild(mkTd(fmt(sk),'',{background:bg}));
+            tr.appendChild(mkTd(sd!=null?sd.toFixed(2):null,deltaClass(sd),{background:bg}));
+        });
+        tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);wrap.appendChild(tbl);card.appendChild(wrap);
+    cont.innerHTML='';cont.appendChild(card);
+}
+
+// ── CHART TAB ──
+let selChartStore='',selChartMetric='delta';
+function renderChart(){
+    const cont=document.getElementById('tabContent');
+    const data=activeData();
+    if(!data.length){cont.innerHTML='<div class="table-card"><div class="status-box">Немає даних</div></div>';return;}
+    const sts=activeStores();
+    if(!selChartStore||!sts.find(s=>s.name===selChartStore))selChartStore=sts[0]?.name||'';
+
+    const card=document.createElement('div');card.className='table-card';card.style.padding='16px';
+
+    // Controls
+    const ctrl=document.createElement('div');ctrl.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center';
+    const lbl1=document.createElement('span');lbl1.style.cssText='font-size:11px;font-weight:600;color:var(--text-sec)';lbl1.textContent='Магазин:';
+    ctrl.appendChild(lbl1);
+    sts.forEach(st=>{
+        const b=document.createElement('button');
+        b.className='pill'+(st.name===selChartStore?' active':'');
+        b.textContent=st.name.split(' ').slice(0,3).join(' ');b.title=st.name;
+        if(st.name===selChartStore){b.style.background='#1d1d1f';b.style.color='#fff';}
+        b.onclick=()=>{selChartStore=st.name;renderChart();};
+        ctrl.appendChild(b);
+    });
+    const lbl2=document.createElement('span');lbl2.style.cssText='font-size:11px;font-weight:600;color:var(--text-sec);margin-left:8px';lbl2.textContent='Показник:';
+    ctrl.appendChild(lbl2);
+    [{v:'delta',l:'Δ Дельта'},{v:'foks',l:'Фокстрот'},{v:'komf',l:'Комфі'}].forEach(m=>{
+        const b=document.createElement('button');b.className='pill'+(m.v===selChartMetric?' active':'');
+        b.textContent=m.l;
+        if(m.v===selChartMetric){b.style.background='#0071e3';b.style.color='#fff';}
+        b.onclick=()=>{selChartMetric=m.v;renderChart();};
+        ctrl.appendChild(b);
+    });
+    card.appendChild(ctrl);
+
+    const chartDiv=document.createElement('div');chartDiv.className='chart-wrap';
+    const canvas=document.createElement('canvas');canvas.id='dailyChart';
+    chartDiv.appendChild(canvas);card.appendChild(chartDiv);
+
+    cont.innerHTML='';cont.appendChild(card);
+
+    // Build data
+    const labels=data.map(r=>fmtDate(r.date));
+    const vals=data.map(r=>{
+        const v=r.storeVals[selChartStore]||{};
+        if(selChartMetric==='delta')return v.delta??((v.foks&&v.komf&&v.foks!==0)?v.komf/v.foks:null);
+        if(selChartMetric==='foks')return v.foks??null;
+        return v.komf??null;
+    });
+    const color=selChartMetric==='delta'?'#6b21a8':selChartMetric==='foks'?'#1a56db':'#0e7490';
+    const bgColors=selChartMetric==='delta'?vals.map(v=>{
+        if(v===null)return'rgba(200,200,200,0.2)';
+        if(v<0.9)return'rgba(26,127,55,0.7)';
+        if(v<1.0)return'rgba(45,158,90,0.6)';
+        if(v<=1.1)return'rgba(110,110,115,0.5)';
+        if(v<=1.3)return'rgba(192,80,0,0.65)';
+        return'rgba(192,57,43,0.75)';
+    }):null;
+
+    if(chartInstance){chartInstance.destroy();chartInstance=null;}
+    const ctx=canvas.getContext('2d');
+    const isBar=selChartMetric==='delta';
+    chartInstance=new Chart(ctx,{
+        type:isBar?'bar':'line',
+        data:{
+            labels,
+            datasets:[{
+                label:(selChartMetric==='delta'?'Δ ':selChartMetric==='foks'?'Фокс ':'Комфі ')+selChartStore.split(' ').slice(0,3).join(' '),
+                data:vals,
+                backgroundColor:isBar?bgColors:color+'22',
+                borderColor:color,
+                borderWidth:isBar?0:2,
+                pointRadius:data.length>60?0:3,
+                pointHoverRadius:6,
+                tension:0.3,fill:!isBar,spanGaps:true
+            }]
+        },
+        options:{
+            responsive:true,maintainAspectRatio:false,
+            interaction:{mode:'index',intersect:false},
+            plugins:{
+                legend:{display:false},
+                tooltip:{backgroundColor:'#1d1d1f',callbacks:{
+                    label:c=>` ${c.dataset.label}: ${c.raw!=null?c.raw.toFixed(2):'—'}`
+                }}
+            },
+            scales:{
+                x:{grid:{color:'#f0f0f0'},ticks:{font:{size:9},color:'#86868b',maxTicksLimit:20,maxRotation:45}},
+                y:{grid:{color:'#f0f0f0'},ticks:{font:{size:10},color:'#86868b'},
+                   ...(selChartMetric==='delta'?{min:0.5}:{})}
+            }
+        }
+    });
+}
+
+let chartInstance=null;
 function switchTab(tab){
     activeTab=tab;
     document.querySelectorAll('.tab').forEach((b,i)=>{
-        b.classList.toggle('active',['table','weekday','weekly'][i]===tab);
+        b.classList.toggle('active',['table','weekday','weekly','monthly','chart'][i]===tab);
     });
     render();
 }
