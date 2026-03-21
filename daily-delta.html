@@ -297,7 +297,8 @@ th, td { font-size: 10px; padding: 3px 5px; }
 /* ✅ ПЛАВНІ ПЕРЕХОДИ */
 .pill { transition: all 0.15s ease; }
 .chart-wrap canvas { transition: opacity 0.2s ease; }
-#toggleTooltipBtn.active { background: #ef4444 !important; color: white !important; }
+#btnTooltip.active { background: #1d1d1f !important; color: white !important; }
+#btnTooltip:not(.active) { background: #ef4444 !important; color: white !important; }
 </style>
 </head>
 <body>
@@ -1054,8 +1055,6 @@ chart.update('none');
 }
 btnTooltip.textContent = tooltipEnabled ? '💬 Tooltip: ON' : '🔇 Tooltip: OFF';
 btnTooltip.classList.toggle('active', tooltipEnabled);
-btnTooltip.style.background = tooltipEnabled ? '' : '#ef4444';
-btnTooltip.style.color = '#fff';
 };
 c0.appendChild(btnTooltip);
 
@@ -1145,9 +1144,9 @@ const datasets = [];
 const CHART_COLORS = ['#1a56db','#0e7490','#6b21a8','#9d174d','#065f46','#92400e'];
 const dataLength = filteredKeys.length;
 
-// ✅ ПОКАЗУЄМО ВСІ МІТКИ, але з розумним позиціюванням
+// ✅ ПОКАЗУЄМО ВСІ МІТКИ з розумним позиціюванням
 const customDataLabelsConfig = {
-display: true, // ✅ ПОКАЗУЄМО ВСІ!
+display: true,
 color: (context) => context.dataset.borderColor,
 backgroundColor: 'rgba(255, 255, 255, 0.95)',
 padding: 2,
@@ -1155,10 +1154,9 @@ font: { size: isMobile ? 8 : 9, weight: '600', family: 'Inter' },
 formatter: (v) => v != null ? v.toFixed(2) : '',
 anchor: 'end',
 align: (context) => {
-// ✅ ЧЕРГУЄМО позиціювання щоб не накладались
 const idx = context.dataIndex;
 const total = context.dataset.data.length;
-if (idx === total - 1) return 'right'; // Остання точка — справа
+if (idx === total - 1) return 'right';
 if (idx % 4 === 0) return 'top';
 if (idx % 4 === 1) return 'bottom';
 if (idx % 4 === 2) return 'top';
@@ -1206,7 +1204,7 @@ const vals = filteredKeys.map(k => getVal(gMap.get(k), st.name));
 const dataset = {
 type: 'line',
 label: st.name.split(' ').slice(1,3).join(' '),
-data: vals,
+ vals,
 borderColor: color,
 backgroundColor: color + '22',
 borderWidth: 2.5,
@@ -1287,16 +1285,13 @@ usePointStyle: true
 },
 tooltip: {
 enabled: tooltipEnabled,
-// ✅ НА МОБІЛЬНИХ: менший і швидше зникає
 backgroundColor: 'rgba(0, 0, 0, 0.9)',
 titleFont: { size: isMobile ? 11 : 13, weight: '600' },
 bodyFont: { size: isMobile ? 10 : 12 },
 padding: isMobile ? 6 : 12,
 cornerRadius: isMobile ? 4 : 8,
 displayColors: true,
-// ✅ АВТО-ЗНИКНЕННЯ ЧЕРЕЗ 3 секунди на мобільних
 hideOnClick: true,
-enabled: tooltipEnabled,
 callbacks: {
 label: c => ' ' + c.dataset.label + ': ' + (c.raw != null ? (selChartMetric === 'delta' ? c.raw.toFixed(2) : fmt(c.raw)) : '—')
 }
@@ -1326,26 +1321,21 @@ maxRotation: isMobile ? 45 : 0,
 autoSkip: true
 } 
 },
+// ✅ АВТОМАТИЧНИЙ МАСШТАБ Y — БЕЗ ЖОРСТКИХ ОБМЕЖЕНЬ
 y: {
-grace: isMobile ? '25%' : '15%',
+grace: isMobile ? '35%' : '25%',  // Запас зверху і знизу
 grid: { color: '#e5e7eb' },
 ticks: {
 font: { size: isMobile ? 9 : 10 },
 color: '#6b7280',
 callback: v => selChartMetric === 'delta' ? v.toFixed(2) : fmt(v)
-},
-...(selChartMetric === 'delta' ? { 
-min: 0.5,
-max: 2.8,
-ticks: { stepSize: 0.5 }
-} : {})
+}
+// ✅ Chart.js сам підбере мін/макс під дані!
 }
 }
 }
 });
 }
-
-
 // ──────────────────────────────────────────────
 // ПЕРЕМИКАННЯ ТАБІВ
 // ──────────────────────────────────────────────
