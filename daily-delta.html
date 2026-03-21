@@ -535,9 +535,11 @@ renderFilters(); render();
 });
 if (allSA) baS.style.background = '#374151';
 sp.appendChild(baS);
-stores.forEach(s => {
+stores.filter(s => s.name && s.name.trim()).forEach(s => {
 const a = selStores.has(s.name);
-const b = mkPill(s.name.split(' ').slice(1,4).join(' '), a, '', () => {
+const displayName = s.name.split(' ').slice(1,4).join(' ');
+if (!displayName) return;
+const b = mkPill(displayName, a, '', () => {
 if (a) { if (selStores.size > 1) selStores.delete(s.name); }
 else selStores.add(s.name);
 renderFilters(); render();
