@@ -140,7 +140,12 @@ font-size: 11px;
 text-align: right;
 white-space: nowrap;
 }
-thead { position: sticky; top: 0; z-index: 30; }
+thead { 
+position: sticky; 
+top: 0; 
+z-index: 60;
+background: var(--card);
+}
 th.grp {
 text-align: center;
 font-size: 9px;
@@ -167,18 +172,19 @@ background-clip: padding-box;
 th.c-l1, td.c-l1 {
 position: sticky;
 left: 0;
-z-index: 40;
+z-index: 50;
 text-align: left;
 min-width: 52px;
 width: 52px;
 font-size: 10px;
 font-weight: 600;
 background: var(--card);
+border-right: 1px solid rgba(0,0,0,0.08);
 }
 th.c-l2, td.c-l2 {
 position: sticky;
 left: 52px;
-z-index: 35;
+z-index: 45;
 text-align: left;
 min-width: 34px;
 width: 34px;
@@ -208,8 +214,19 @@ background: #fefce8;
 font-size: 10px;
 color: #7c2d12;
 border-bottom: 1px solid #fde68a;
-position: relative;
-z-index: 25;
+}
+tr.diff-row td.c-l1 {
+position: sticky;
+left: 0;
+z-index: 55;
+background: #fefce8;
+border-right: 2px solid rgba(0,0,0,0.1);
+}
+tr.diff-row td.c-l2 {
+position: sticky;
+left: 52px;
+z-index: 50;
+background: #fefce8;
 }
 tr.diff-row td.diff-pos { color: #15803d; }
 tr.diff-row td.diff-neg { color: #b91c1c; }
@@ -767,9 +784,9 @@ if (idx > 0) {
 const prevK = keys[idx - 1];
 const prev = wMap.get(prevK);
 const diffTr = document.createElement('tr'); diffTr.className = 'diff-row';
-const tdLabel = mkTd('↔ vs T' + prev.week, '', {textAlign: 'left', paddingLeft: '6px', color: '#92400e', fontWeight: '600', fontSize: '10px'});
+const tdLabel = mkTd('↔ vs T' + prev.week, 'c-l1', {textAlign: 'left', paddingLeft: '6px', color: '#92400e', fontWeight: '600', fontSize: '10px'});
 diffTr.appendChild(tdLabel);
-diffTr.appendChild(document.createElement('td'));
+diffTr.appendChild(mkTd('', 'c-l2'));
 sts.forEach((st, i) => {
 const bg = STORE_BG[i % STORE_BG.length];
 segsToShow.forEach((sdef, jSeg) => {
@@ -897,9 +914,9 @@ tbody.appendChild(tr);
 if (prevKey && groupMap.has(prevKey)) {
 const prevAgg = aggRows(groupMap.get(prevKey).rows, sts);
 const diffTr = document.createElement('tr'); diffTr.className = 'diff-row';
-const tdLabel = mkTd('↔ vs попер.', '', {textAlign: 'left', paddingLeft: '4px', color: '#92400e', fontWeight: '600'});
+const tdLabel = mkTd('↔ vs попер.', 'c-l1', {textAlign: 'left', paddingLeft: '4px', color: '#92400e', fontWeight: '600'});
 diffTr.appendChild(tdLabel);
-diffTr.appendChild(document.createElement('td'));
+diffTr.appendChild(mkTd('', 'c-l2'));
 sts.forEach((st, i) => {
 const bg = STORE_BG[i % STORE_BG.length];
 const pf = prevAgg[st.name]?.f || 0, pk = prevAgg[st.name]?.k || 0;
