@@ -180,7 +180,13 @@ tr.metric-row.selected td.col-metric{color:var(--accent);font-weight:700}
       <div class="chart-title">Динаміка по місяцях</div>
       <div class="chart-subtitle" id="chartSubtitle">Оберіть показники у таблиці</div>
     </div>
-    <div class="selected-chips" id="selectedChips"></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="view-toggle" style="padding:2px">
+        <button class="view-btn active" id="chartTypeLine" onclick="setChartType('line')">📈 Лінія</button>
+        <button class="view-btn" id="chartTypeBar" onclick="setChartType('bar')">📊 Стовпці</button>
+      </div>
+      <div class="selected-chips" id="selectedChips"></div>
+    </div>
   </div>
   <div id="chartBody">
     <div class="empty-chart">
@@ -212,6 +218,7 @@ const GROUP_HINTS=[
 
 // FIX 3: showLabels declared at module scope
 let showLabels = true;
+let chartType = 'line'; // 'line' | 'bar'
 
 function summaryRule(name) {
   const lo = name.toLowerCase().trim();
@@ -568,17 +575,15 @@ function renderTable(){
   const tbody=document.createElement('tbody');
   let rowIdx=0;
 
-  // FIX 2: Single pass — render all non-ТО metrics first, then ТО + виконання плану at the end
-  allMetrics.forEach(metric=>{
+  // Helper to append a generic metric row
+  function appendMetricRow(metric, bcOverride){
     if(!years.some(y=>parsedByYear[y]?.[metric]))return;
-    if(metric.toLowerCase()==='то'||metric.toLowerCase()==='товарообіг')return;
-
     const tr=document.createElement('tr');tr.className='metric-row appear';tr.dataset.metric=metric;
     tr.style.animationDelay=(rowIdx*0.03)+'s';
     rowIdx++;
     if(selectedMetrics.has(metric))tr.classList.add('selected');
     const tdN=document.createElement('td');tdN.className='col-metric';tdN.textContent=metric;tr.appendChild(tdN);
-    const bc=badgeCls(metric);
+    const bc=bcOverride||badgeCls(metric);
     periods.forEach((p,pi)=>{
       const val=parsedByYear[p.y]?.[metric]?.[p.m];
       const td=document.createElement('td');
@@ -592,33 +597,24 @@ function renderTable(){
     });
     tr.addEventListener('click',()=>toggleMetric(metric));
     tbody.appendChild(tr);
+  }
+
+  // Row order: all other metrics → ТО план → ТО → Виконання плану
+  const toMetric   = allMetrics.find(m=>m.toLowerCase()==='то'||m.toLowerCase()==='товарообіг');
+  const toPlanMetric = allMetrics.find(m=>m.toLowerCase()==='то план'||m.toLowerCase()==='товарообіг план');
+  const skipSet    = new Set([toMetric, toPlanMetric].filter(Boolean).map(m=>m.toLowerCase()));
+
+  allMetrics.forEach(metric=>{
+    if(skipSet.has(metric.toLowerCase()))return;
+    appendMetricRow(metric);
   });
 
-  // ТО row — appended after all other metrics
-  const toMetric=allMetrics.find(m=>m.toLowerCase()==='то'||m.toLowerCase()==='товарообіг');
-  if(toMetric){
-    const tr=document.createElement('tr');tr.className='metric-row appear';tr.dataset.metric=toMetric;
-    tr.style.animationDelay=(rowIdx*0.03)+'s';
-    rowIdx++;
-    if(selectedMetrics.has(toMetric))tr.classList.add('selected');
-    const tdN=document.createElement('td');tdN.className='col-metric';tdN.textContent=toMetric;tr.appendChild(tdN);
-    periods.forEach((p,pi)=>{
-      const val=parsedByYear[p.y]?.[toMetric]?.[p.m];
-      const td=document.createElement('td');
-      if(pi>0&&periods[pi-1].y!==p.y)td.classList.add('grp-start');
-      if(val!==undefined&&val!==null){
-        const sp=document.createElement('span');
-        sp.className='badge '+(selectedMetrics.has(toMetric)?'badge-to':'badge-other');
-        sp.textContent=fmt(val);td.appendChild(sp);
-      } else{td.textContent='—';td.style.color='#ccc';}
-      tr.appendChild(td);
-    });
-    tr.addEventListener('click',()=>toggleMetric(toMetric));
-    tbody.appendChild(tr);
+  if(toPlanMetric) appendMetricRow(toPlanMetric, 'badge-plan');
 
-    // Виконання плану immediately after ТО
-    const hasToPlan=allMetrics.some(m=>m.toLowerCase()==='то план'||m.toLowerCase()==='товарообіг план');
-    if(hasToPlan){
+  if(toMetric){
+    appendMetricRow(toMetric, 'badge-to');
+
+    if(toPlanMetric){
       const trExec=document.createElement('tr');trExec.className='metric-row appear';trExec.dataset.metric='Виконання плану';
       trExec.style.animationDelay=(rowIdx*0.03)+'s';
       rowIdx++;
@@ -626,8 +622,8 @@ function renderTable(){
       periods.forEach((p,pi)=>{
         const td=document.createElement('td');
         if(pi>0&&periods[pi-1].y!==p.y)td.classList.add('grp-start');
-        const planVal=parsedByYear[p.y]?.['ТО план']?.[p.m];
-        const toVal=parsedByYear[p.y]?.['ТО']?.[p.m];
+        const planVal=parsedByYear[p.y]?.[toPlanMetric]?.[p.m];
+        const toVal=parsedByYear[p.y]?.[toMetric]?.[p.m];
         if(planVal!=null&&planVal>0&&toVal!=null){
           const execPct=(toVal/planVal)*100;
           const sp=document.createElement('span');
@@ -757,6 +753,7 @@ function renderChart(){
           fill:false,
           spanGaps:false,
           borderDash:[],
+          _origDash:[],
           _tt:tt1,
           barPercentage:0.7,
           categoryPercentage:0.8
@@ -775,7 +772,8 @@ function renderChart(){
           tension:0.35,
           fill:false,
           spanGaps:false,
-          borderDash:[5,3],
+          borderDash:chartType==='bar'?[]:[5,3],
+          _origDash:[5,3],
           _tt:tt2,
           barPercentage:0.7,
           categoryPercentage:0.8
@@ -993,7 +991,7 @@ function renderChart(){
 
     // FIX 1: data: {labels, datasets} — was missing the "data:" key
     chartInstance=new Chart(ctx2,{
-      type:'line',
+      type:chartType,
       data:{labels,datasets},
       plugins:[smartLabels],
       options:{
@@ -1287,6 +1285,21 @@ function setView(mode){
   document.getElementById('tableSection').style.display=mode==='table'?'':'none';
   document.getElementById('chartPanel').classList.toggle('visible',mode==='chart');
   if(mode==='chart')renderChart();else renderSummary();
+}
+
+function setChartType(type){
+  chartType=type;
+  document.getElementById('chartTypeLine').classList.toggle('active',type==='line');
+  document.getElementById('chartTypeBar').classList.toggle('active',type==='bar');
+  if(chartInstance){
+    chartInstance.config.type=type;
+    chartInstance.data.datasets.forEach(ds=>{
+      // dashes look odd on bars — clear them; restore on line
+      if(type==='bar') ds.borderDash=[];
+      else ds.borderDash=ds._origDash||[];
+    });
+    chartInstance.update('none');
+  }
 }
 
 function showTableSkeleton(card, rows=12, cols=5){
