@@ -79,7 +79,6 @@ tr.metric-row.selected td.col-metric{color:var(--accent);font-weight:700}
 .badge-other {background:rgba(134,134,139,.08);color:#555}
 .badge-plan  {background:rgba(255,149,0,.15);color:#b85000}
 .badge-exec  {background:rgba(52,199,89,.15);color:#1a7f37}
-.badge-exec-low{background:rgba(255,59,48,.15);color:#c0392b}
 .table-hint{font-size:11px;color:var(--text-sec);padding:8px 12px;border-bottom:1px solid #f2f2f4;background:#fafafa;border-radius:16px 16px 0 0;display:flex;align-items:center;gap:6px}
 .table-hint span{color:var(--accent);font-weight:600}
 .grp-start{border-left:2px solid #e0e0e5!important}
@@ -92,8 +91,8 @@ tr.metric-row.selected td.col-metric{color:var(--accent);font-weight:700}
 .chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity .15s;user-select:none}
 .chip .chip-x{opacity:.6;font-size:13px;line-height:1}
 .chip:hover .chip-x{opacity:1}
-.chart-wrap{position:relative;height:320px}
-@media(max-width:600px){.chart-wrap{height:240px}}
+.chart-wrap{position:relative;height:340px}
+@media(max-width:600px){.chart-wrap{height:260px}}
 .empty-chart{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--text-sec);gap:8px}
 .empty-chart-icon{font-size:36px;opacity:.4}
 .empty-chart-text{font-size:13px;font-weight:500}
@@ -138,6 +137,29 @@ tr.metric-row.selected td.col-metric{color:var(--accent);font-weight:700}
 .cmp-delta.flat{background:rgba(134,134,139,.10);color:#6e6e73}
 .p1-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#0071e3;flex-shrink:0}
 .p2-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#34c759;flex-shrink:0}
+
+/* Chart Controls */
+.chart-controls{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.chart-ctrl-btn{
+border:1px solid var(--border);
+background:#fff;
+padding:5px 10px;
+border-radius:8px;
+font-size:11px;
+font-weight:600;
+cursor:pointer;
+font-family:inherit;
+color:var(--text-sec);
+transition:all .2s;
+}
+.chart-ctrl-btn.active{
+background:var(--accent);
+color:#fff;
+border-color:var(--accent);
+}
+.chart-ctrl-btn:hover:not(.active){
+background:#f5f5f7;
+}
 </style>
 </head>
 <body>
@@ -178,6 +200,10 @@ tr.metric-row.selected td.col-metric{color:var(--accent);font-weight:700}
 </div>
 <div class="selected-chips" id="selectedChips"></div>
 </div>
+<div class="chart-controls" id="chartControls" style="display:none">
+<button class="chart-ctrl-btn active" id="chartTypeLine" onclick="setChartType('line')">📈 Лінія</button>
+<button class="chart-ctrl-btn" id="chartTypeBar" onclick="setChartType('bar')">📊 Стовпчики</button>
+</div>
 <div id="chartBody">
 <div class="empty-chart">
 <div class="empty-chart-icon">📊</div>
@@ -204,6 +230,7 @@ const GROUP_HINTS=[
 {kw:['аксес','acc','акс'],cls:'badge-acc'},
 {kw:['чек','конвер','кпч','asp','шт'],cls:'badge-checks'},
 ];
+
 function summaryRule(name) {
 const lo = name.toLowerCase().trim();
 if (/лфл/.test(lo)) return {type:'none'};
@@ -211,9 +238,11 @@ if (/послуги\s*%|послуг.*%/.test(lo)) return {type:'ratio', num:'П
 if (/acc\s*%|аcc\s*%/.test(lo))       return {type:'ratio', num:'ACC'};
 if (/гурт\s*%/.test(lo))              return {type:'ratio', num:'Гурт'};
 if (/конвер/.test(lo)) return {type:'avg'};
+// ВИПРАВЛЕНО: ТО план тепер сумується
 if (/^то$|товарообіг|^то план$|товарообіг план|^чеки$|послуги грн|^послуги$|^acc$|^аcc$|^гурт$/.test(lo)) return {type:'sum'};
 return {type:'avg'};
 }
+
 let allYears=[],allMetrics=[],allMonths=[];
 let selectedPeriods=new Set();
 let selectedMetrics=new Set();
@@ -223,6 +252,9 @@ let parsedByYear={};
 let compareMode=false;
 let periods1=new Set();
 let periods2=new Set();
+let chartType='bar';
+let showLabels=true;
+
 function parseCSV(text){
 const rows=[];let row=[],col='',inQ=false;
 for(let i=0;i<text.length;i++){
@@ -236,10 +268,12 @@ else col+=c;
 if(col||row.length){row.push(col.trim());rows.push(row);}
 return rows.filter(r=>r.some(c=>c));
 }
+
 const MMAP={'січень':1,'лютий':2,'березень':3,'квітень':4,'травень':5,'червень':6,'липень':7,'серпень':8,'вересень':9,'жовтень':10,'листопад':11,'грудень':12,'січ':1,'лют':2,'бер':3,'кві':4,'тра':5,'чер':6,'лип':7,'сер':8,'вер':9,'жов':10,'лис':11,'гру':12};
 function mNum(s){const lo=(s||'').toLowerCase().trim();for(const[k,v]of Object.entries(MMAP))if(lo===k||lo.startsWith(k))return v;return null;}
 function toN(v){if(!v&&v!==0)return null;const s=String(v).replace(/\s|\u00a0/g,'').replace('%','').replace(',','.');if(['#div/0!','#value!','#ref!','#n/a','#name?'].includes(s.toLowerCase()))return null;const n=parseFloat(s);return isNaN(n)?null:n;}
 function fmt(v){if(v===null||v===undefined)return'—';const n=Number(v);if(isNaN(n))return String(v);if(Math.abs(n)>=1000000)return(n/1000000).toFixed(2)+'М';if(Math.abs(n)>=1000)return(n/1000).toFixed(1)+'К';if(n%1!==0)return n.toFixed(2);return n.toLocaleString('uk-UA');}
+
 function detectAndParse(rows){
 const header=rows[0];
 const metrics=header.slice(2).map(h=>h.trim()).filter(Boolean);
@@ -266,6 +300,7 @@ const step=Math.floor(CHART_COLORS.length/Math.max(allYears.length,1));
 allYears.forEach((y,i)=>{yearColorMap[y]=CHART_COLORS[(i*step)%CHART_COLORS.length];});
 allYears.forEach(y=>allMonths.forEach(m=>selectedPeriods.add(y+'_'+m)));
 }
+
 function activeMonths(y){ return allMonths.filter(m=>selectedPeriods.has(y+'_'+m)); }
 function getAllPairs(){
 return allYears.flatMap(y=>
@@ -276,12 +311,14 @@ allMonths.filter(m=>allMetrics.some(met=>parsedByYear[y]?.[met]?.[m]!=null))
 function activePeriods(){ return allYears.flatMap(y=>allMonths.filter(m=>selectedPeriods.has(y+'_'+m)).map(m=>({y,m}))); }
 function yColor(y){return yearColorMap[y]||'#86868b';}
 function dsColor(y,mi){const bi=CHART_COLORS.indexOf(yearColorMap[y]);return CHART_COLORS[(bi+mi*2)%CHART_COLORS.length];}
+
 function badgeCls(name){
 const lo=name.toLowerCase();
 for(const g of GROUP_HINTS)if(g.kw.some(k=>lo.includes(k)))return g.cls;
 if(lo.includes('%')||lo.includes('доля')||lo.includes('конвер'))return'badge-pct';
 return'badge-other';
 }
+
 function renderFilters(){
 if(compareMode){
 renderPillsFor('yearPills',  periods1, ()=>'#0071e3');
@@ -326,9 +363,11 @@ yp.appendChild(btn);
 yp.appendChild(divider());
 });
 }
+
 function mkPill(text,active,onclick){
 const b=document.createElement('button');b.className='pill'+(active?' active':'');b.textContent=text;b.onclick=onclick;return b;
 }
+
 function updFilters(){
 if(compareMode) return;
 document.querySelectorAll('#yearPills .pill[data-period]').forEach(b=>{
@@ -342,6 +381,7 @@ b.style.borderColor=a?yColor(y):'';
 const ba=document.querySelector('#yearPills .pill:not([data-period])');
 if(ba)ba.className='pill'+(allYears.flatMap(y=>allMonths.map(m=>y+'_'+m)).every(k=>selectedPeriods.has(k))?' active':'');
 }
+
 function toggleCompareMode(){
 compareMode=!compareMode;
 const btn=document.getElementById('compareModeBtn');
@@ -354,6 +394,7 @@ periods2.clear();
 }
 renderFilters();refreshAll();
 }
+
 function renderPillsFor(containerId, periodsSet, colorFn){
 const yp=document.getElementById(containerId);
 yp.innerHTML='';
@@ -390,6 +431,7 @@ yp.appendChild(btn);
 yp.appendChild(divider());
 });
 }
+
 function calcPeriodVal(metric, periodsSet){
 const rule=summaryRule(metric);
 if(rule.type==='none')return null;
@@ -418,12 +460,15 @@ return toSum>0?(numSum/toSum*100):null;
 }
 return null;
 }
+
+// ВИКОНАННЯ ПЛАНУ
 function calcPlanExecution(periodsSet){
 const toPlan=calcPeriodVal('ТО план',periodsSet);
 const toActual=calcPeriodVal('ТО',periodsSet);
 if(toPlan===null||toPlan===0||toActual===null)return null;
 return (toActual/toPlan)*100;
 }
+
 function renderCompareSummary(){
 const panel=document.getElementById('compareSummaryPanel');
 const grid=document.getElementById('compareSummaryGrid');
@@ -464,6 +509,7 @@ ${!isRatio&&n2>1?`<div class="cmp-row"><div class="cmp-row-lbl" style="padding-l
 </div>`;
 grid.appendChild(card);
 });
+
 const hasToPlan=selectedMetrics.has('ТО план')||selectedMetrics.has('товарообіг план');
 const hasTo=selectedMetrics.has('ТО')||selectedMetrics.has('товарообіг');
 if(hasToPlan||hasTo){
@@ -475,11 +521,11 @@ card.innerHTML=`
 <div class="cmp-card-label" style="color:#34c759;font-weight:700">📊 Виконання плану</div>
 <div class="cmp-row">
 <div class="cmp-row-lbl"><span class="p1-dot"></span> П1</div>
-<div class="cmp-row-val" style="color:${exec1>=100?'#1a7f37':'#c0392b'}">${exec1!=null?exec1.toFixed(1)+'%':'—'}</div>
+<div class="cmp-row-val" style="color:#34c759">${exec1!=null?exec1.toFixed(1)+'%':'—'}</div>
 </div>
 <div class="cmp-row">
 <div class="cmp-row-lbl"><span class="p2-dot"></span> П2</div>
-<div class="cmp-row-val" style="color:${exec2>=100?'#1a7f37':'#c0392b'}">${exec2!=null?exec2.toFixed(1)+'%':'—'}</div>
+<div class="cmp-row-val" style="color:#34c759">${exec2!=null?exec2.toFixed(1)+'%':'—'}</div>
 </div>
 <hr class="cmp-divider">
 <div class="cmp-row">
@@ -491,6 +537,7 @@ grid.appendChild(card);
 }
 panel.style.display=grid.children.length?'block':'none';
 }
+
 function refreshAll(){
 updFilters();
 renderTable();
@@ -498,6 +545,7 @@ renderChips();
 if(viewMode==='chart') renderChart();
 else renderSummary();
 }
+
 function renderTable(){
 const card=document.getElementById('tableCard');card.innerHTML='';
 let periods;
@@ -543,10 +591,8 @@ thead.appendChild(trH);
 tbl.appendChild(thead);
 const tbody=document.createElement('tbody');
 let rowIdx=0;
-// Спочатку вставляємо всі метрики КРІМ ТО
 allMetrics.forEach(metric=>{
 if(!years.some(y=>parsedByYear[y]?.[metric]))return;
-if(metric.toLowerCase()==='то'||metric.toLowerCase()==='товарообіг')return;
 const tr=document.createElement('tr');tr.className='metric-row appear';tr.dataset.metric=metric;
 tr.style.animationDelay=(rowIdx*0.03)+'s';
 rowIdx++;
@@ -567,36 +613,14 @@ tr.appendChild(td);
 tr.addEventListener('click',()=>toggleMetric(metric));
 tbody.appendChild(tr);
 });
-// ДОДАЄМО РЯДОК ТО
-const hasTo=allMetrics.some(m=>m.toLowerCase()==='то'||m.toLowerCase()==='товарообіг');
-if(hasTo){
-const toMetric=allMetrics.find(m=>m.toLowerCase()==='то'||m.toLowerCase()==='товарообіг');
-const tr=document.createElement('tr');tr.className='metric-row appear';tr.dataset.metric=toMetric;
+
+// ОКРЕМИЙ РЯДОК ВИКОНАННЯ ПЛАНУ
+const hasToPlan=selectedMetrics.has('ТО план')||selectedMetrics.has('товарообіг план');
+const hasTo=selectedMetrics.has('ТО')||selectedMetrics.has('товарообіг');
+if(hasToPlan||hasTo){
+const tr=document.createElement('tr');tr.className='metric-row appear selected';tr.dataset.metric='Виконання плану';
 tr.style.animationDelay=(rowIdx*0.03)+'s';
-rowIdx++;
-if(selectedMetrics.has(toMetric))tr.classList.add('selected');
-const tdN=document.createElement('td');tdN.className='col-metric';tdN.textContent=toMetric;tr.appendChild(tdN);
-const bc='badge-to';
-periods.forEach((p,pi)=>{
-const val=parsedByYear[p.y]?.[toMetric]?.[p.m];
-const td=document.createElement('td');
-if(pi>0&&periods[pi-1].y!==p.y)td.classList.add('grp-start');
-if(val!==undefined&&val!==null){
-const sp=document.createElement('span');
-sp.className='badge '+(selectedMetrics.has(toMetric)?bc:'badge-other');
-sp.textContent=fmt(val);td.appendChild(sp);
-} else{td.textContent='—';td.style.color='#ccc';}
-tr.appendChild(td);
-});
-tr.addEventListener('click',()=>toggleMetric(toMetric));
-tbody.appendChild(tr);
-// ОДРАЗУ ПІСЛЯ ТО - ВИКОНАННЯ ПЛАНУ (якщо є ТО план)
-const hasToPlan=allMetrics.some(m=>m.toLowerCase()==='то план'||m.toLowerCase()==='товарообіг план');
-if(hasToPlan){
-const trExec=document.createElement('tr');trExec.className='metric-row appear';trExec.dataset.metric='Виконання плану';
-trExec.style.animationDelay=(rowIdx*0.03)+'s';
-rowIdx++;
-const tdN=document.createElement('td');tdN.className='col-metric';tdN.textContent='📊 Виконання плану';tdN.style.color='#34c759';tdN.style.fontWeight='700';trExec.appendChild(tdN);
+const tdN=document.createElement('td');tdN.className='col-metric';tdN.textContent='📊 Виконання плану';tdN.style.color='#34c759';tdN.style.fontWeight='700';tr.appendChild(tdN);
 periods.forEach((p,pi)=>{
 const td=document.createElement('td');
 if(pi>0&&periods[pi-1].y!==p.y)td.classList.add('grp-start');
@@ -605,18 +629,21 @@ const toVal=parsedByYear[p.y]?.['ТО']?.[p.m];
 if(planVal!=null&&planVal>0&&toVal!=null){
 const execPct=(toVal/planVal)*100;
 const sp=document.createElement('span');
-sp.className='badge '+(execPct>=100?'badge-exec':'badge-exec-low');
+sp.className='badge badge-exec';
 sp.textContent=execPct.toFixed(1)+'%';
+sp.style.background='rgba(52,199,89,.2)';
+sp.style.color='#1a7f37';
 td.appendChild(sp);
 }else{td.textContent='—';td.style.color='#ccc';}
-trExec.appendChild(td);
+tr.appendChild(td);
 });
-trExec.addEventListener('click',()=>toggleMetric('Виконання плану'));
-tbody.appendChild(trExec);
+tr.addEventListener('click',()=>toggleMetric('Виконання плану'));
+tbody.appendChild(tr);
 }
-}
+
 tbl.appendChild(tbody);wrap.appendChild(tbl);
 }
+
 function toggleMetric(metric){
 if(selectedMetrics.has(metric))selectedMetrics.delete(metric);else selectedMetrics.add(metric);
 document.querySelectorAll('tr.metric-row').forEach(tr=>{
@@ -630,6 +657,7 @@ const b=document.getElementById('btnChart');b.style.background='#e8f0fe';b.style
 setTimeout(()=>{b.style.background='';b.style.color='';},1500);
 }
 }
+
 function renderChips(){
 const cont=document.getElementById('selectedChips');cont.innerHTML='';
 const metrics=[...selectedMetrics];
@@ -664,20 +692,31 @@ const periodStr=[...selectedPeriods].sort().map(k=>{const[y,m]=k.split('_');retu
 document.getElementById('chartSubtitle').textContent=selectedMetrics.size?periodStr:'Оберіть показники у таблиці';
 }
 }
+
+// CHART - ВИПРАВЛЕНО
 function renderChart(){
 const body=document.getElementById('chartBody');
+const controls=document.getElementById('chartControls');
 if(!selectedMetrics.size){
 if(chartInstance){chartInstance.destroy();chartInstance=null;}
 body.innerHTML=`<div class="empty-chart"><div class="empty-chart-icon">📊</div><div class="empty-chart-text">Натисніть на рядок у таблиці, щоб додати показник</div></div>`;
+controls.style.display='none';
 renderSummary();return;
 }
+controls.style.display='flex';
+
 const metrics=[...selectedMetrics];
 const datasets=[];
 let labels=[];
+
+// Перевірка чи потрібно показувати виконання плану (достатньо одного з ТО або ТО план)
 const hasToPlan=metrics.some(m=>m.toLowerCase().includes('то план')||m.toLowerCase().includes('товарообіг план'));
 const hasTo=metrics.some(m=>m.toLowerCase()==='то'||m.toLowerCase()==='товарообіг');
 const showExecution=hasToPlan||hasTo;
+
+// Зберігаємо дані виконання плану для відображення над стовпчиками
 let executionData={};
+
 try{
 if(compareMode){
 const p1pairs=[...periods1].map(k=>{const[y,m]=k.split('_');return{y:+y,m:+m};}).sort((a,b)=>a.y-b.y||a.m-b.m);
@@ -687,8 +726,11 @@ labels=Array.from({length:maxLen},(_,i)=>{
 const p=p1pairs[i]||p2pairs[i];
 return MONTHS_UK[p.m-1].slice(0,3);
 });
+
 const P1_SHADES=['#0071e3','#5856d6','#af52de','#ff3b30','#ff9500','#00b388','#5ac8fa','#007aff'];
 const P2_SHADES=['#34c759','#30d158','#32ade6','#ffd60a','#ff6b35','#64d2ff','#a8e063','#b5e48c'];
+
+// Збираємо TO і TO план для розрахунку виконання
 let toPlanData1=[],toPlanData2=[],toData1=[],toData2=[];
 if(showExecution){
 toPlanData1=Array.from({length:maxLen},(_,i)=>{const p=p1pairs[i];return p!=null?(parsedByYear[p.y]?.['ТО план']?.[p.m]??null):null;});
@@ -696,6 +738,7 @@ toPlanData2=Array.from({length:maxLen},(_,i)=>{const p=p2pairs[i];return p!=null
 toData1=Array.from({length:maxLen},(_,i)=>{const p=p1pairs[i];return p!=null?(parsedByYear[p.y]?.['ТО']?.[p.m]??null):null;});
 toData2=Array.from({length:maxLen},(_,i)=>{const p=p2pairs[i];return p!=null?(parsedByYear[p.y]?.['ТО']?.[p.m]??null):null;});
 }
+
 metrics.forEach((metric,mi)=>{
 const c1=P1_SHADES[mi%P1_SHADES.length];
 const c2=P2_SHADES[mi%P2_SHADES.length];
@@ -705,6 +748,7 @@ const tt1=p1pairs.map(p=>MONTHS_UK[p.m-1].slice(0,3)+' '+p.y);
 const tt2=p2pairs.map(p=>MONTHS_UK[p.m-1].slice(0,3)+' '+p.y);
 while(tt1.length<maxLen) tt1.push('');
 while(tt2.length<maxLen) tt2.push('');
+
 datasets.push({
 label:`${metric} (П1)`,
 data:data1,
@@ -723,6 +767,7 @@ _tt:tt1,
 barPercentage:0.7,
 categoryPercentage:0.8
 });
+
 datasets.push({
 label:`${metric} (П2)`,
 data:data2,
@@ -742,6 +787,8 @@ barPercentage:0.7,
 categoryPercentage:0.8
 });
 });
+
+// Розрахунок виконання плану для відображення над стовпчиками
 if(showExecution){
 executionData.p1=toPlanData1.map((plan,i)=>{
 const to=toData1[i];
@@ -752,11 +799,14 @@ const to=toData2[i];
 return plan!=null&&plan>0&&to!=null?(to/plan)*100:null;
 });
 }
+
 } else {
 const periods=activePeriods();
 const years=[...new Set(periods.map(p=>p.y))].sort((a,b)=>a-b);
 const xMonths=[...new Set(periods.map(p=>p.m))].sort((a,b)=>a-b);
 labels=xMonths.map(m=>MONTHS_UK[m-1].slice(0,3));
+
+// Збираємо TO і TO план для розрахунку виконання
 let toPlanByYear={},toByYear={};
 if(showExecution){
 years.forEach(y=>{
@@ -764,6 +814,7 @@ toPlanByYear[y]=parsedByYear[y]?.['ТО план']||{};
 toByYear[y]=parsedByYear[y]?.['ТО']||{};
 });
 }
+
 metrics.forEach((metric,mi)=>{
 years.forEach(y=>{
 const mv=parsedByYear[y]?.[metric]||{};
@@ -788,6 +839,8 @@ categoryPercentage:0.8
 });
 });
 });
+
+// Розрахунок виконання плану для відображення над стовпчиками
 if(showExecution){
 executionData={};
 years.forEach(y=>{
@@ -800,8 +853,11 @@ return plan!=null&&plan>0&&to!=null?(to/plan)*100:null;
 });
 }
 }
+
 if(chartInstance){chartInstance.destroy();chartInstance=null;}
 body.innerHTML='<div class="chart-wrap"><canvas id="dynChart"></canvas></div>';
+
+// Плагін для підписів - ВКЛЮЧАЄ % ВИКОНАННЯ ПЛАНУ НАД СТОВПЧИКАМИ
 const smartLabels={
 id:'smartLabels',
 afterDatasetsDraw(chart,args,options){
@@ -811,6 +867,8 @@ ctx.save();
 const FS=10,PX=4,PY=3,LH=FS+PY*2+2,GAP=4;
 ctx.font=`600 ${FS}px Inter,sans-serif`;
 const pts=[];
+
+// Збираємо точки для основних датасетів
 chart.data.datasets.forEach((ds,di)=>{
 const meta=chart.getDatasetMeta(di);
 if(meta.hidden)return;
@@ -822,10 +880,13 @@ const text=fmt(val);
 pts.push({x:el.x,y:el.y,text,color:ds.borderColor,tw:ctx.measureText(text).width,isPct:false,dsIndex:di});
 });
 });
+
+// Додаємо % виконання плану НАД стовпчиками
 if(executionData && Object.keys(executionData).length>0){
 if(compareMode){
 const p1pairs=[...periods1].map(k=>{const[y,m]=k.split('_');return{y:+y,m:+m};}).sort((a,b)=>a.y-b.y||a.m-b.m);
 const p2pairs=[...periods2].map(k=>{const[y,m]=k.split('_');return{y:+y,m:+m};}).sort((a,b)=>a.y-b.y||a.m-b.m);
+
 if(executionData.p1){
 executionData.p1.forEach((execVal,pi)=>{
 if(execVal===null||execVal===undefined)return;
@@ -837,9 +898,10 @@ if(!meta||!meta.data[pi])return;
 const el=meta.data[pi];
 if(!el)return;
 const text=execVal.toFixed(1)+'%';
-pts.push({x:el.x,y:el.y-15,text,color:execVal>=100?'#34c759':'#ff3b30',tw:ctx.measureText(text).width,isPct:true,dsIndex:dsIndex});
+pts.push({x:el.x,y:el.y-15,text,color:'#34c759',tw:ctx.measureText(text).width,isPct:true,dsIndex:dsIndex});
 });
 }
+
 if(executionData.p2){
 executionData.p2.forEach((execVal,pi)=>{
 if(execVal===null||execVal===undefined)return;
@@ -851,7 +913,7 @@ if(!meta||!meta.data[pi])return;
 const el=meta.data[pi];
 if(!el)return;
 const text=execVal.toFixed(1)+'%';
-pts.push({x:el.x,y:el.y-15,text,color:execVal>=100?'#34c759':'#ff3b30',tw:ctx.measureText(text).width,isPct:true,dsIndex:dsIndex});
+pts.push({x:el.x,y:el.y-15,text,color:'#30d158',tw:ctx.measureText(text).width,isPct:true,dsIndex:dsIndex});
 });
 }
 } else {
@@ -869,17 +931,19 @@ if(!meta||!meta.data[pi])return;
 const el=meta.data[pi];
 if(!el)return;
 const text=execVal.toFixed(1)+'%';
-pts.push({x:el.x,y:el.y-15,text,color:execVal>=100?'#34c759':'#ff3b30',tw:ctx.measureText(text).width,isPct:true,dsIndex:dsIndex});
+pts.push({x:el.x,y:el.y-15,text,color:'#34c759',tw:ctx.measureText(text).width,isPct:true,dsIndex:dsIndex});
 });
 });
 }
 }
+
 const byX={};
 pts.forEach(p=>{
 const k=Math.round(p.x);
 if(!byX[k])byX[k]=[];
 byX[k].push(p);
 });
+
 Object.values(byX).forEach(grp=>{
 grp.sort((a,b)=>{
 if(a.isPct&&!b.isPct)return -1;
@@ -935,10 +999,12 @@ ctx.setLineDash([]);
 ctx.restore();
 }
 };
+
 const ctx=document.getElementById('dynChart').getContext('2d');
+
 chartInstance=new Chart(ctx,{
-type:'bar',
-data:{labels,datasets},
+type:chartType,
+{labels,datasets},
 plugins:[smartLabels],
 options:{
 responsive:true,
@@ -1010,6 +1076,8 @@ console.error('Chart render error:',err);
 body.innerHTML=`<div class="status-box error">❌ Помилка графіка: ${err.message}</div>`;
 }
 }
+
+// Chart Controls
 function setChartType(type){
 chartType=type;
 document.getElementById('chartTypeLine').classList.toggle('active',type==='line');
@@ -1019,12 +1087,14 @@ chartInstance.config.type=type;
 chartInstance.update('none');
 }
 }
+
 function mkSRow(label,val,isPct=false){
 const row=document.createElement('div');row.className='summary-row';
 const l=document.createElement('div');l.className='summary-row-lbl';l.textContent=label;
 const v=document.createElement('div');v.className='summary-row-val'+(isPct?' pct':'');v.textContent=val;
 row.appendChild(l);row.appendChild(v);return row;
 }
+
 function mkDeltaRow(prevYear, currYear, prevVal, currVal){
 const row=document.createElement('div');row.className='delta-row';
 const lbl=document.createElement('div');lbl.className='delta-label';
@@ -1043,6 +1113,7 @@ badge.innerHTML=`<span class="delta-arrow">${arrow}</span>${text}`;
 row.appendChild(badge);
 return row;
 }
+
 function calcBase(y, metric, rule, months){
 const mv=parsedByYear[y]?.[metric]||{};
 const vals=months.map(m=>mv[m]).filter(v=>v!==undefined&&v!==null);
@@ -1059,11 +1130,13 @@ return toSum>0?(numSum/toSum*100):null;
 }
 return null;
 }
+
 function renderSummary(){
 const panel=document.getElementById('summaryPanel');
 const grid=document.getElementById('summaryGrid');grid.innerHTML='';
 const metrics=[...selectedMetrics];
 if(!metrics.length){panel.style.display='none';return;}
+
 if(compareMode){
 metrics.forEach(metric=>{
 const rule=summaryRule(metric);
@@ -1119,6 +1192,7 @@ rowsEl.appendChild(dRow);
 }
 if(rowsEl.children.length)grid.appendChild(card);
 });
+
 const hasToPlan=selectedMetrics.has('ТО план')||selectedMetrics.has('товарообіг план');
 const hasTo=selectedMetrics.has('ТО')||selectedMetrics.has('товарообіг');
 if(hasToPlan||hasTo){
@@ -1156,6 +1230,7 @@ grid.appendChild(card);
 panel.style.display=grid.children.length?'block':'none';
 return;
 }
+
 const periods=activePeriods();const years=[...new Set(periods.map(p=>p.y))].sort((a,b)=>a-b);const months=[...new Set(periods.map(p=>p.m))].sort((a,b)=>a-b);
 if(!periods.length){panel.style.display='none';return;}
 metrics.forEach(metric=>{
@@ -1210,6 +1285,7 @@ rowsEl.appendChild(mkDeltaRow(py,cy,baseVals[py],baseVals[cy]));
 }
 if(rowsEl.children.length)grid.appendChild(card);
 });
+
 const hasToPlan=selectedMetrics.has('ТО план')||selectedMetrics.has('товарообіг план');
 const hasTo=selectedMetrics.has('ТО')||selectedMetrics.has('товарообіг');
 if(hasToPlan||hasTo){
@@ -1220,8 +1296,10 @@ const exec=calcPlanExecution(selectedPeriods);
 rowsEl.appendChild(mkSRow('Виконання за період',exec!=null?exec.toFixed(1)+'%':'—',true));
 grid.appendChild(card);
 }
+
 panel.style.display=grid.children.length?'block':'none';
 }
+
 function setView(mode){
 viewMode=mode;
 document.getElementById('btnTable').classList.toggle('active',mode==='table');
@@ -1230,6 +1308,7 @@ document.getElementById('tableSection').style.display=mode==='table'?'':'none';
 document.getElementById('chartPanel').classList.toggle('visible',mode==='chart');
 if(mode==='chart')renderChart();else renderSummary();
 }
+
 function showTableSkeleton(card, rows=12, cols=5){
 card.innerHTML='';
 const wrap=document.createElement('div');
@@ -1245,6 +1324,7 @@ wrap.appendChild(row);
 }
 card.appendChild(wrap);
 }
+
 async function init(){
 const card=document.getElementById('tableCard');
 showTableSkeleton(card, 12, 5);
