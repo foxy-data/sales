@@ -91,8 +91,8 @@ tr.metric-row.selected td.col-metric{color:var(--accent);font-weight:700}
 .chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity .15s;user-select:none}
 .chip .chip-x{opacity:.6;font-size:13px;line-height:1}
 .chip:hover .chip-x{opacity:1}
-.chart-wrap{position:relative;height:320px}
-@media(max-width:600px){.chart-wrap{height:240px}}
+.chart-wrap{position:relative;height:340px}
+@media(max-width:600px){.chart-wrap{height:260px}}
 .empty-chart{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--text-sec);gap:8px}
 .empty-chart-icon{font-size:36px;opacity:.4}
 .empty-chart-text{font-size:13px;font-weight:500}
@@ -203,7 +203,7 @@ background:#f5f5f7;
 <div class="chart-controls" id="chartControls" style="display:none">
 <button class="chart-ctrl-btn active" id="chartTypeLine" onclick="setChartType('line')">📈 Лінія</button>
 <button class="chart-ctrl-btn" id="chartTypeBar" onclick="setChartType('bar')">📊 Стовпчики</button>
-<button class="chart-ctrl-btn" id="chartTooltipBtn" onclick="toggleTooltip()">💬 Tooltip</button>
+<button class="chart-ctrl-btn active" id="chartTooltipBtn" onclick="toggleTooltip()">💬 Підписи</button>
 </div>
 <div id="chartBody">
 <div class="empty-chart">
@@ -227,29 +227,23 @@ const CHART_COLORS=['#0071e3','#ff3b30','#34c759','#ff9500','#af52de','#5856d6',
 const GROUP_HINTS=[
 {kw:['товарообіг','то ','то,'],cls:'badge-to'},
 {kw:['товарообіг план','то план'],cls:'badge-plan'},
-{kw:['виконання','exec'],cls:'badge-exec'},
 {kw:['послуг','serv'],cls:'badge-serv'},
 {kw:['аксес','acc','акс'],cls:'badge-acc'},
 {kw:['чек','конвер','кпч','asp','шт'],cls:'badge-checks'},
 ];
 
-// Правила підсумку — ВИПРАВЛЕНО для ТО план
 function summaryRule(name) {
 const lo = name.toLowerCase().trim();
 if (/лфл/.test(lo)) return {type:'none'};
-// % метрики — ratio
 if (/послуги\s*%|послуг.*%/.test(lo)) return {type:'ratio', num:'Послуги грн', fallback:'Послуги'};
 if (/acc\s*%|аcc\s*%/.test(lo))       return {type:'ratio', num:'ACC'};
 if (/гурт\s*%/.test(lo))              return {type:'ratio', num:'Гурт'};
-// Конверсія — avg
 if (/конвер/.test(lo)) return {type:'avg'};
-// ВИПРАВЛЕНО: ТО план тепер сумується як абсолютне значення
+// ВИПРАВЛЕНО: ТО план тепер сумується
 if (/^то$|товарообіг|^то план$|товарообіг план|^чеки$|послуги грн|^послуги$|^acc$|^аcc$|^гурт$/.test(lo)) return {type:'sum'};
-// Решта — avg
 return {type:'avg'};
 }
 
-// STATE
 let allYears=[],allMetrics=[],allMonths=[];
 let selectedPeriods=new Set();
 let selectedMetrics=new Set();
@@ -259,10 +253,9 @@ let parsedByYear={};
 let compareMode=false;
 let periods1=new Set();
 let periods2=new Set();
-let chartType='line'; // line або bar
-let showTooltip=true;
+let chartType='bar'; // За замовчуванням стовпчики
+let showLabels=true; // Підписи на графіку
 
-// CSV Parser
 function parseCSV(text){
 const rows=[];let row=[],col='',inQ=false;
 for(let i=0;i<text.length;i++){
@@ -327,7 +320,6 @@ if(lo.includes('%')||lo.includes('доля')||lo.includes('конвер'))return
 return'badge-other';
 }
 
-// FILTERS
 function renderFilters(){
 if(compareMode){
 renderPillsFor('yearPills',  periods1, ()=>'#0071e3');
@@ -470,7 +462,7 @@ return toSum>0?(numSum/toSum*100):null;
 return null;
 }
 
-// ВИКОНАННЯ ПЛАНУ — розрахунок %
+// ВИКОНАННЯ ПЛАНУ - розрахунок %
 function calcPlanExecution(periodsSet){
 const toPlan=calcPeriodVal('ТО план',periodsSet);
 const toActual=calcPeriodVal('ТО',periodsSet);
@@ -520,9 +512,9 @@ grid.appendChild(card);
 });
 
 // ДОДАНО: Виконання плану для порівняння
-const hasToPlan=selectedMetrics.has('ТО план');
-const hasTo=selectedMetrics.has('ТО');
-if(hasToPlan&&hasTo){
+const hasToPlan=selectedMetrics.has('ТО план')||selectedMetrics.has('товарообіг план');
+const hasTo=selectedMetrics.has('ТО')||selectedMetrics.has('товарообіг');
+if(hasToPlan||hasTo){
 const exec1=calcPlanExecution(periods1);
 const exec2=calcPlanExecution(periods2);
 if(exec1!==null||exec2!==null){
@@ -556,7 +548,6 @@ if(viewMode==='chart') renderChart();
 else renderSummary();
 }
 
-// TABLE
 function renderTable(){
 const card=document.getElementById('tableCard');card.innerHTML='';
 let periods;
@@ -625,10 +616,10 @@ tr.addEventListener('click',()=>toggleMetric(metric));
 tbody.appendChild(tr);
 });
 
-// ДОДАНО: Рядок виконання плану якщо обрано ТО і ТО план
-const hasToPlan=selectedMetrics.has('ТО план');
-const hasTo=selectedMetrics.has('ТО');
-if(hasToPlan&&hasTo){
+// ДОДАНО: Рядок виконання плану
+const hasToPlan=selectedMetrics.has('ТО план')||selectedMetrics.has('товарообіг план');
+const hasTo=selectedMetrics.has('ТО')||selectedMetrics.has('товарообіг');
+if(hasToPlan||hasTo){
 const tr=document.createElement('tr');tr.className='metric-row appear selected';tr.dataset.metric='Виконання плану';
 tr.style.animationDelay=(rowIdx*0.03)+'s';
 const tdN=document.createElement('td');tdN.className='col-metric';tdN.textContent='📊 Виконання плану';tdN.style.color='#34c759';tdN.style.fontWeight='700';tr.appendChild(tdN);
@@ -703,7 +694,7 @@ document.getElementById('chartSubtitle').textContent=selectedMetrics.size?period
 }
 }
 
-// CHART — ВИПРАВЛЕНО побудову по вибраних періодах
+// CHART - ВИПРАВЛЕНО
 function renderChart(){
 const body=document.getElementById('chartBody');
 const controls=document.getElementById('chartControls');
@@ -719,17 +710,32 @@ const metrics=[...selectedMetrics];
 const datasets=[];
 let labels=[];
 
+// Перевірка чи потрібно показувати виконання плану (достатньо одного з ТО або ТО план)
+const hasToPlan=metrics.some(m=>m.toLowerCase().includes('то план')||m.toLowerCase().includes('товарообіг план'));
+const hasTo=metrics.some(m=>m.toLowerCase()==='то'||m.toLowerCase()==='товарообіг');
+const showExecution=hasToPlan||hasTo;
+
 if(compareMode){
 const p1pairs=[...periods1].map(k=>{const[y,m]=k.split('_');return{y:+y,m:+m};}).sort((a,b)=>a.y-b.y||a.m-b.m);
 const p2pairs=[...periods2].map(k=>{const[y,m]=k.split('_');return{y:+y,m:+m};}).sort((a,b)=>a.y-b.y||a.m-b.m);
 const maxLen=Math.max(p1pairs.length,p2pairs.length);
-// ВИПРАВЛЕНО: тепер labels відповідають реально вибраним періодам
 labels=Array.from({length:maxLen},(_,i)=>{
 const p=p1pairs[i]||p2pairs[i];
-return p?MONTHS_UK[p.m-1].slice(0,3):'';
+return MONTHS_UK[p.m-1].slice(0,3);
 });
+
 const P1_SHADES=['#0071e3','#5856d6','#af52de','#ff3b30','#ff9500','#00b388','#5ac8fa','#007aff'];
 const P2_SHADES=['#34c759','#30d158','#32ade6','#ffd60a','#ff6b35','#64d2ff','#a8e063','#b5e48c'];
+
+// Збираємо TO і TO план для розрахунку виконання
+let toPlanData1=[],toPlanData2=[],toData1=[],toData2=[];
+if(showExecution){
+toPlanData1=Array.from({length:maxLen},(_,i)=>{const p=p1pairs[i];return p!=null?(parsedByYear[p.y]?.['ТО план']?.[p.m]??null):null;});
+toPlanData2=Array.from({length:maxLen},(_,i)=>{const p=p2pairs[i];return p!=null?(parsedByYear[p.y]?.['ТО план']?.[p.m]??null):null;});
+toData1=Array.from({length:maxLen},(_,i)=>{const p=p1pairs[i];return p!=null?(parsedByYear[p.y]?.['ТО']?.[p.m]??null):null;});
+toData2=Array.from({length:maxLen},(_,i)=>{const p=p2pairs[i];return p!=null?(parsedByYear[p.y]?.['ТО']?.[p.m]??null):null;});
+}
+
 metrics.forEach((metric,mi)=>{
 const c1=P1_SHADES[mi%P1_SHADES.length];
 const c2=P2_SHADES[mi%P2_SHADES.length];
@@ -739,58 +745,163 @@ const tt1=p1pairs.map(p=>MONTHS_UK[p.m-1].slice(0,3)+' '+p.y);
 const tt2=p2pairs.map(p=>MONTHS_UK[p.m-1].slice(0,3)+' '+p.y);
 while(tt1.length<maxLen) tt1.push('');
 while(tt2.length<maxLen) tt2.push('');
-datasets.push({label:`${metric} (П1)`,data:data1,borderColor:c1,backgroundColor:c1+'80',pointBackgroundColor:c1,pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:7,tension:0.35,fill:false,spanGaps:false,borderDash:[],_tt:tt1});
-datasets.push({label:`${metric} (П2)`,data:data2,borderColor:c2,backgroundColor:c2+'80',pointBackgroundColor:c2,pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:7,tension:0.35,fill:false,spanGaps:false,borderDash:[5,3],_tt:tt2});
+
+datasets.push({
+label:`${metric} (П1)`,
+data:data1,
+borderColor:c1,
+backgroundColor:c1+'80',
+pointBackgroundColor:c1,
+pointBorderColor:'#fff',
+pointBorderWidth:1.5,
+pointRadius:4,
+pointHoverRadius:7,
+tension:0.35,
+fill:false,
+spanGaps:false,
+borderDash:[],
+_tt:tt1,
+barPercentage:0.7,
+categoryPercentage:0.8
 });
 
-// ДОДАНО: Виконання плану на графік
-const hasToPlan=selectedMetrics.has('ТО план');
-const hasTo=selectedMetrics.has('ТО');
-if(hasToPlan&&hasTo){
-const execData1=p1pairs.map(p=>{
-const plan=parsedByYear[p.y]?.['ТО план']?.[p.m];
-const to=parsedByYear[p.y]?.['ТО']?.[p.m];
+datasets.push({
+label:`${metric} (П2)`,
+data:data2,
+borderColor:c2,
+backgroundColor:c2+'80',
+pointBackgroundColor:c2,
+pointBorderColor:'#fff',
+pointBorderWidth:1.5,
+pointRadius:4,
+pointHoverRadius:7,
+tension:0.35,
+fill:false,
+spanGaps:false,
+borderDash:[5,3],
+_tt:tt2,
+barPercentage:0.7,
+categoryPercentage:0.8
+});
+});
+
+// Додаємо виконання плану як окремий dataset
+if(showExecution){
+const execData1=toPlanData1.map((plan,i)=>{
+const to=toData1[i];
 return plan!=null&&plan>0&&to!=null?(to/plan)*100:null;
 });
-const execData2=p2pairs.map(p=>{
-const plan=parsedByYear[p.y]?.['ТО план']?.[p.m];
-const to=parsedByYear[p.y]?.['ТО']?.[p.m];
+const execData2=toPlanData2.map((plan,i)=>{
+const to=toData2[i];
 return plan!=null&&plan>0&&to!=null?(to/plan)*100:null;
 });
-datasets.push({label:`Виконання плану (П1)`,data:execData1,borderColor:'#34c759',backgroundColor:'#34c75980',pointBackgroundColor:'#34c759',pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:7,tension:0.35,fill:false,spanGaps:false,borderDash:[],_tt:tt1,yAxisID:'y1'});
-datasets.push({label:`Виконання плану (П2)`,data:execData2,borderColor:'#30d158',backgroundColor:'#30d15880',pointBackgroundColor:'#30d158',pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:7,tension:0.35,fill:false,spanGaps:false,borderDash:[5,3],_tt:tt2,yAxisID:'y1'});
+
+datasets.push({
+label:`Виконання П1 (%)`,
+data:execData1,
+borderColor:'#34c759',
+backgroundColor:'#34c75940',
+pointBackgroundColor:'#34c759',
+pointBorderColor:'#fff',
+pointBorderWidth:1.5,
+pointRadius:3,
+pointHoverRadius:6,
+tension:0.35,
+fill:false,
+spanGaps:false,
+borderDash:[2,2],
+_tt:tt1,
+yAxisID:'y1',
+order:10
+});
+
+datasets.push({
+label:`Виконання П2 (%)`,
+data:execData2,
+borderColor:'#30d158',
+backgroundColor:'#30d15840',
+pointBackgroundColor:'#30d158',
+pointBorderColor:'#fff',
+pointBorderWidth:1.5,
+pointRadius:3,
+pointHoverRadius:6,
+tension:0.35,
+fill:false,
+spanGaps:false,
+borderDash:[4,3],
+_tt:tt2,
+yAxisID:'y1',
+order:10
+});
 }
 
 } else {
 const periods=activePeriods();
 const years=[...new Set(periods.map(p=>p.y))].sort((a,b)=>a-b);
-// ВИПРАВЛЕНО: тепер вісь X — тільки вибрані місяці
 const xMonths=[...new Set(periods.map(p=>p.m))].sort((a,b)=>a-b);
 labels=xMonths.map(m=>MONTHS_UK[m-1].slice(0,3));
+
+// Збираємо TO і TO план для розрахунку виконання
+let toPlanByYear={},toByYear={};
+if(showExecution){
+years.forEach(y=>{
+toPlanByYear[y]=parsedByYear[y]?.['ТО план']||{};
+toByYear[y]=parsedByYear[y]?.['ТО']||{};
+});
+}
+
 metrics.forEach((metric,mi)=>{
 years.forEach(y=>{
 const mv=parsedByYear[y]?.[metric]||{};
 const color=dsColor(y,mi);
 const label=years.length>1?`${metric} (${y})`:metric;
 const data=xMonths.map(m=>selectedPeriods.has(y+'_'+m)?(mv[m]??null):null);
-datasets.push({label,data,borderColor:color,backgroundColor:color+'80',pointBackgroundColor:color,pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:7,tension:0.35,fill:false,spanGaps:true});
+datasets.push({
+label,
+data,
+borderColor:color,
+backgroundColor:color+'80',
+pointBackgroundColor:color,
+pointBorderColor:'#fff',
+pointBorderWidth:1.5,
+pointRadius:4,
+pointHoverRadius:7,
+tension:0.35,
+fill:false,
+spanGaps:true,
+barPercentage:0.7,
+categoryPercentage:0.8
+});
 });
 });
 
-// ДОДАНО: Виконання плану на графік
-const hasToPlan=selectedMetrics.has('ТО план');
-const hasTo=selectedMetrics.has('ТО');
-if(hasToPlan&&hasTo){
+// Додаємо виконання плану
+if(showExecution){
 years.forEach(y=>{
 const color='#34c759';
-const label=years.length>1?`Виконання плану (${y})`:'Виконання плану';
+const label=years.length>1?`Виконання (${y})`:'Виконання плану';
 const data=xMonths.map(m=>{
 if(!selectedPeriods.has(y+'_'+m))return null;
-const plan=parsedByYear[y]?.['ТО план']?.[m];
-const to=parsedByYear[y]?.['ТО']?.[m];
+const plan=toPlanByYear[y]?.[m];
+const to=toByYear[y]?.[m];
 return plan!=null&&plan>0&&to!=null?(to/plan)*100:null;
 });
-datasets.push({label,data,borderColor:color,backgroundColor:color+'80',pointBackgroundColor:color,pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:7,tension:0.35,fill:false,spanGaps:true,yAxisID:'y1'});
+datasets.push({
+label,
+data,
+borderColor:color,
+backgroundColor:color+'40',
+pointBackgroundColor:color,
+pointBorderColor:'#fff',
+pointBorderWidth:1.5,
+pointRadius:3,
+pointHoverRadius:6,
+tension:0.35,
+fill:false,
+spanGaps:true,
+yAxisID:'y1',
+order:10
+});
 });
 }
 }
@@ -798,27 +909,59 @@ datasets.push({label,data,borderColor:color,backgroundColor:color+'80',pointBack
 if(chartInstance){chartInstance.destroy();chartInstance=null;}
 body.innerHTML='<div class="chart-wrap"><canvas id="dynChart"></canvas></div>';
 
+// Плагін для підписів - НЕ ЗАЛЕЖИТЬ ВІД tooltip
 const smartLabels={
 id:'smartLabels',
-afterDatasetsDraw(chart){
-if(!showTooltip)return;
-const ctx=chart.ctx;ctx.save();
+afterDatasetsDraw(chart,args,options){
+if(!showLabels)return; // Тепер контролюється окремою змінною
+const ctx=chart.ctx;
+ctx.save();
 const FS=10,PX=4,PY=3,LH=FS+PY*2+2,GAP=4;
 ctx.font=`600 ${FS}px Inter,sans-serif`;
 const pts=[];
+
+// Збираємо точки для основних датасетів
 chart.data.datasets.forEach((ds,di)=>{
-const meta=chart.getDatasetMeta(di);if(meta.hidden)return;
+if(ds.yAxisID==='y1')return; // Пропускаємо % виконання
+const meta=chart.getDatasetMeta(di);
+if(meta.hidden)return;
 ds.data.forEach((val,pi)=>{
 if(val===null||val===undefined)return;
-const el=meta.data[pi];if(!el)return;
-const text=ds.yAxisID==='y1'?val.toFixed(1)+'%':fmt(val);
-pts.push({x:el.x,y:el.y,text,color:ds.borderColor,tw:ctx.measureText(text).width});
+const el=meta.data[pi];
+if(!el)return;
+const text=fmt(val);
+pts.push({x:el.x,y:el.y,text,color:ds.borderColor,tw:ctx.measureText(text).width,isPct:false});
 });
 });
+
+// Додаємо підписи для виконання плану (%)
+chart.data.datasets.forEach((ds,di)=>{
+if(ds.yAxisID!=='y1')return;
+const meta=chart.getDatasetMeta(di);
+if(meta.hidden)return;
+ds.data.forEach((val,pi)=>{
+if(val===null||val===undefined)return;
+const el=meta.data[pi];
+if(!el)return;
+const text=val.toFixed(1)+'%';
+pts.push({x:el.x,y:el.y,text,color:ds.borderColor,tw:ctx.measureText(text).width,isPct:true});
+});
+});
+
 const byX={};
-pts.forEach(p=>{const k=Math.round(p.x);if(!byX[k])byX[k]=[];byX[k].push(p);});
+pts.forEach(p=>{
+const k=Math.round(p.x);
+if(!byX[k])byX[k]=[];
+byX[k].push(p);
+});
+
 Object.values(byX).forEach(grp=>{
-grp.sort((a,b)=>a.y-b.y);
+// Сортуємо: спочатку абсолютні значення, потім %
+grp.sort((a,b)=>{
+if(a.isPct&&!b.isPct)return 1;
+if(!a.isPct&&b.isPct)return -1;
+return a.y-b.y;
+});
 grp.forEach(p=>{p.ly=p.y-LH/2-6;});
 for(let it=0;it<20;it++){
 let ch=false;
@@ -830,15 +973,39 @@ if(!ch)break;
 }
 grp.forEach(p=>{
 const bw=p.tw+PX*2,bh=FS+PY*2,bx=p.x-bw/2,by=p.ly-bh/2;
-ctx.shadowColor='rgba(0,0,0,0.15)';ctx.shadowBlur=4;ctx.shadowOffsetY=1;
-ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(bx,by,bw,bh,4);ctx.fill();
-ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-ctx.strokeStyle=p.color;ctx.lineWidth=1.2;ctx.beginPath();ctx.roundRect(bx,by,bw,bh,4);ctx.stroke();
-ctx.fillStyle=p.color;ctx.font=`700 ${FS}px Inter,sans-serif`;
-ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.text,p.x,by+bh/2);
-ctx.textAlign='left';ctx.textBaseline='alphabetic';
+ctx.shadowColor='rgba(0,0,0,0.15)';
+ctx.shadowBlur=4;
+ctx.shadowOffsetY=1;
+ctx.fillStyle='#fff';
+ctx.beginPath();
+ctx.roundRect(bx,by,bw,bh,4);
+ctx.fill();
+ctx.shadowColor='transparent';
+ctx.shadowBlur=0;
+ctx.shadowOffsetY=0;
+ctx.strokeStyle=p.color;
+ctx.lineWidth=1.2;
+ctx.beginPath();
+ctx.roundRect(bx,by,bw,bh,4);
+ctx.stroke();
+ctx.fillStyle=p.color;
+ctx.font=`700 ${FS}px Inter,sans-serif`;
+ctx.textAlign='center';
+ctx.textBaseline='middle';
+ctx.fillText(p.text,p.x,by+bh/2);
+ctx.textAlign='left';
+ctx.textBaseline='alphabetic';
 const lsy=by+bh;
-if(p.y-lsy>6){ctx.strokeStyle=p.color+'66';ctx.lineWidth=1;ctx.setLineDash([2,2]);ctx.beginPath();ctx.moveTo(p.x,lsy);ctx.lineTo(p.x,p.y-5);ctx.stroke();ctx.setLineDash([]);}
+if(p.y-lsy>6){
+ctx.strokeStyle=p.color+'66';
+ctx.lineWidth=1;
+ctx.setLineDash([2,2]);
+ctx.beginPath();
+ctx.moveTo(p.x,lsy);
+ctx.lineTo(p.x,p.y-5);
+ctx.stroke();
+ctx.setLineDash([]);
+}
 });
 });
 ctx.restore();
@@ -846,8 +1013,6 @@ ctx.restore();
 };
 
 const ctx=document.getElementById('dynChart').getContext('2d');
-
-// Друга вісь Y для % виконання плану
 const hasExecDataset=datasets.some(d=>d.yAxisID==='y1');
 
 chartInstance=new Chart(ctx,{
@@ -855,14 +1020,32 @@ type:chartType,
 data:{labels,datasets},
 plugins:[smartLabels],
 options:{
-responsive:true,maintainAspectRatio:false,
+responsive:true,
+maintainAspectRatio:false,
 interaction:{mode:'index',intersect:false},
 layout:{padding:{top:30,left:8,right:8}},
 plugins:{
-legend:{display:datasets.length>1,position:'top',labels:{font:{family:'Inter',size:10},boxWidth:20,padding:10,
-generateLabels(c){return c.data.datasets.map((ds,i)=>({text:ds.label,fillStyle:ds.borderColor,strokeStyle:ds.borderColor,lineWidth:2,hidden:c.getDatasetMeta(i).hidden,datasetIndex:i}));}}},
+legend:{
+display:datasets.length>1,
+position:'top',
+labels:{
+font:{family:'Inter',size:10},
+boxWidth:20,
+padding:10,
+generateLabels(c){
+return c.data.datasets.map((ds,i)=>({
+text:ds.label,
+fillStyle:ds.borderColor,
+strokeStyle:ds.borderColor,
+lineWidth:2,
+hidden:c.getDatasetMeta(i).hidden,
+datasetIndex:i
+}));
+}
+}
+},
 tooltip:{
-enabled:showTooltip,
+enabled:true, // Tooltip завжди увімкнений
 backgroundColor:'#1d1d1f',
 titleFont:{family:'Inter',size:12},
 bodyFont:{family:'Inter',size:11},
@@ -877,13 +1060,25 @@ return` ${c.dataset.label}${d?' ['+d+']':''}: ${val}`;
 }
 },
 scales:{
-x:{grid:{color:'#f0f0f0'},ticks:{font:{family:'Inter',size:compareMode?8:10},color:'#86868b',maxRotation:compareMode?45:0,minRotation:0}},
+x:{
+grid:{color:'#f0f0f0'},
+ticks:{
+font:{family:'Inter',size:compareMode?8:10},
+color:'#86868b',
+maxRotation:compareMode?45:0,
+minRotation:0
+}
+},
 y:{
 type:'linear',
 display:true,
 position:'left',
 grid:{color:'#f0f0f0'},
-ticks:{font:{family:'Inter',size:10},color:'#86868b',callback:v=>fmt(v)}
+ticks:{
+font:{family:'Inter',size:10},
+color:'#86868b',
+callback:v=>fmt(v)
+}
 },
 ...(hasExecDataset?{
 y1:{
@@ -891,8 +1086,17 @@ type:'linear',
 display:true,
 position:'right',
 grid:{drawOnChartArea:false},
-ticks:{font:{family:'Inter',size:10},color:'#34c759',callback:v=>v.toFixed(0)+'%'},
-title:{display:true,text:'%',color:'#34c759',font:{size:10}}
+ticks:{
+font:{family:'Inter',size:10},
+color:'#34c759',
+callback:v=>v.toFixed(0)+'%'
+},
+title:{
+display:true,
+text:'Виконання %',
+color:'#34c759',
+font:{size:10}
+}
 }
 }:{})
 }
@@ -908,36 +1112,23 @@ document.getElementById('chartTypeLine').classList.toggle('active',type==='line'
 document.getElementById('chartTypeBar').classList.toggle('active',type==='bar');
 if(chartInstance){
 chartInstance.config.type=type;
-chartInstance.update();
+chartInstance.update('none');
 }
 }
 
 function toggleTooltip(){
-showTooltip=!showTooltip;
-document.getElementById('chartTooltipBtn').classList.toggle('active',showTooltip);
+showLabels=!showLabels;
+document.getElementById('chartTooltipBtn').classList.toggle('active',showLabels);
 if(chartInstance){
-chartInstance.options.plugins.tooltip.enabled=showTooltip;
-chartInstance.options.plugins.smartLabels=showTooltip;
-chartInstance.update();
+chartInstance.update('none');
 }
 }
 
-// SUMMARY
-function calcBase(y, metric, rule, months){
-const mv=parsedByYear[y]?.[metric]||{};
-const vals=months.map(m=>mv[m]).filter(v=>v!==undefined&&v!==null);
-if(!vals.length)return null;
-if(rule.type==='sum') return vals.reduce((a,b)=>a+b,0);
-if(rule.type==='avg') return vals.reduce((a,b)=>a+b,0)/vals.length;
-if(rule.type==='ratio'){
-const numKey=rule.num,fbKey=rule.fallback;
-const numMv=parsedByYear[y]?.[numKey]||parsedByYear[y]?.[fbKey]||{};
-const toMv=parsedByYear[y]?.['ТО']||{};
-const numSum=months.map(m=>numMv[m]).filter(v=>v!=null).reduce((a,b)=>a+b,0);
-const toSum=months.map(m=>toMv[m]).filter(v=>v!=null).reduce((a,b)=>a+b,0);
-return toSum>0?(numSum/toSum*100):null;
-}
-return null;
+function mkSRow(label,val,isPct=false){
+const row=document.createElement('div');row.className='summary-row';
+const l=document.createElement('div');l.className='summary-row-lbl';l.textContent=label;
+const v=document.createElement('div');v.className='summary-row-val'+(isPct?' pct':'');v.textContent=val;
+row.appendChild(l);row.appendChild(v);return row;
 }
 
 function mkDeltaRow(prevYear, currYear, prevVal, currVal){
@@ -959,11 +1150,21 @@ row.appendChild(badge);
 return row;
 }
 
-function mkSRow(label,val,isPct=false){
-const row=document.createElement('div');row.className='summary-row';
-const l=document.createElement('div');l.className='summary-row-lbl';l.textContent=label;
-const v=document.createElement('div');v.className='summary-row-val'+(isPct?' pct':'');v.textContent=val;
-row.appendChild(l);row.appendChild(v);return row;
+function calcBase(y, metric, rule, months){
+const mv=parsedByYear[y]?.[metric]||{};
+const vals=months.map(m=>mv[m]).filter(v=>v!==undefined&&v!==null);
+if(!vals.length)return null;
+if(rule.type==='sum') return vals.reduce((a,b)=>a+b,0);
+if(rule.type==='avg') return vals.reduce((a,b)=>a+b,0)/vals.length;
+if(rule.type==='ratio'){
+const numKey=rule.num,fbKey=rule.fallback;
+const numMv=parsedByYear[y]?.[numKey]||parsedByYear[y]?.[fbKey]||{};
+const toMv=parsedByYear[y]?.['ТО']||{};
+const numSum=months.map(m=>numMv[m]).filter(v=>v!=null).reduce((a,b)=>a+b,0);
+const toSum=months.map(m=>toMv[m]).filter(v=>v!=null).reduce((a,b)=>a+b,0);
+return toSum>0?(numSum/toSum*100):null;
+}
+return null;
 }
 
 function renderSummary(){
@@ -1029,9 +1230,9 @@ if(rowsEl.children.length)grid.appendChild(card);
 });
 
 // ДОДАНО: Виконання плану в підсумках
-const hasToPlan=selectedMetrics.has('ТО план');
-const hasTo=selectedMetrics.has('ТО');
-if(hasToPlan&&hasTo){
+const hasToPlan=selectedMetrics.has('ТО план')||selectedMetrics.has('товарообіг план');
+const hasTo=selectedMetrics.has('ТО')||selectedMetrics.has('товарообіг');
+if(hasToPlan||hasTo){
 const exec1=calcPlanExecution(periods1);
 const exec2=calcPlanExecution(periods2);
 if(exec1!==null||exec2!==null){
@@ -1123,9 +1324,9 @@ if(rowsEl.children.length)grid.appendChild(card);
 });
 
 // ДОДАНО: Виконання плану в звичайному режимі
-const hasToPlan=selectedMetrics.has('ТО план');
-const hasTo=selectedMetrics.has('ТО');
-if(hasToPlan&&hasTo){
+const hasToPlan=selectedMetrics.has('ТО план')||selectedMetrics.has('товарообіг план');
+const hasTo=selectedMetrics.has('ТО')||selectedMetrics.has('товарообіг');
+if(hasToPlan||hasTo){
 const card=document.createElement('div');card.className='summary-card';
 const lbl=document.createElement('div');lbl.className='summary-card-label';lbl.textContent='📊 Виконання плану';lbl.style.color='#34c759';lbl.style.fontWeight='700';card.appendChild(lbl);
 const rowsEl=document.createElement('div');rowsEl.className='summary-rows';card.appendChild(rowsEl);
