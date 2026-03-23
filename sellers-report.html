@@ -22,7 +22,6 @@
             animation:shimmer 1.4s ease-in-out infinite;
             border-radius:7px;
         }
-        /* skeleton rank card */
         .rank-card-skel{
             background:#fff;border-radius:14px;
             box-shadow:0 2px 10px rgba(0,0,0,.04);
@@ -34,11 +33,9 @@
         .rank-card-skel-line{height:12px;border-radius:6px}
         .rank-card-skel-sub{height:9px;width:50%;border-radius:5px}
         .rank-card-skel-val{width:52px;height:18px;border-radius:7px;flex-shrink:0}
-        /* skeleton table row */
         .tbl-row-skel{display:flex;gap:8px;padding:8px 12px;border-bottom:1px solid #f2f2f4}
         .tbl-row-skel-cell{height:11px;border-radius:5px;flex:1}
         .tbl-row-skel-cell.wide{flex:2}
-        /* real cards animate in */
         .rank-card.appear{animation:fadeInUp .3s ease both}
         .filters-wrap.appear,.metric-bar.appear,.dyn-controls.appear{animation:fadeIn .25s ease both}
 
@@ -49,7 +46,6 @@
         .view-btn{border:none;background:transparent;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-sec);font-family:inherit;transition:all .2s}
         .view-btn.active{background:white;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12)}
 
-        /* FILTERS */
         .filters-wrap{
             background:var(--card);border-radius:14px;box-shadow:var(--shadow);
             padding:0;margin-bottom:12px;overflow:visible;
@@ -97,7 +93,6 @@
         .pill:hover{background:#f2f2f7;color:#1d1d1f}
         .pill.active{background:#1d1d1f;color:#fff}
 
-        /* TABLE */
         .table-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:14px}
         table{border-collapse:collapse;table-layout:fixed}
         th{text-align:center;padding:5px 3px;color:var(--text-sec);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.2px;border-bottom:1px solid var(--border);background:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:sticky;top:0;z-index:10}
@@ -108,11 +103,9 @@
         tr:hover td{background:#fafafe}
         tr.total-row:hover td{background:#dce8fc!important}
 
-        /* Sticky cols */
         .col-fix{position:sticky;left:0;background:white;z-index:5;text-align:left!important;padding-left:8px!important;box-shadow:4px 0 8px -2px rgba(0,0,0,.09);border-right:1px solid #e8e8ed;white-space:normal;word-break:break-word;line-height:1.25;font-size:9px;font-weight:600;color:var(--text)}
         th.col-fix{z-index:11;font-size:9px}
 
-        /* Group headers */
         .gh{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:5px 3px;border-bottom:2px solid currentColor!important}
         .gh-to    {color:#0071e3}
         .gh-serv  {color:#34c759}
@@ -133,7 +126,6 @@
 
         .table-hint{font-size:11px;color:var(--text-sec);padding:8px 12px;border-bottom:1px solid #f2f2f4;background:#fafafa;border-radius:16px 16px 0 0}
 
-        /* RATING VIEW */
         .rating-panel{display:none}
         .rating-panel.visible{display:block}
 
@@ -177,7 +169,6 @@
         .rank-bar-bg{height:5px;background:#ebebef;border-radius:3px;overflow:hidden;margin-left:36px}
         .rank-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
 
-        /* DYNAMICS */
         .dyn-panel{display:none}
         .dyn-panel.visible{display:block}
         .dyn-controls{
@@ -221,7 +212,6 @@
         .status-box{padding:40px;text-align:center;color:var(--text-sec);font-size:14px}
         .status-box.error{color:#ff3b30}
 
-        /* CATEGORIES VIEW */
         .cat-panel{display:none}
         .cat-panel.visible{display:block}
         .cat-summary-banner{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:12px 16px;margin-bottom:12px;display:flex;gap:0;border:1px solid rgba(0,0,0,0.06)}
@@ -244,7 +234,6 @@
         .cat-dev.flat{background:rgba(134,134,139,.10);color:#6e6e73}
         .cat-bar-bg{height:5px;background:#ebebef;border-radius:3px;margin-top:8px;overflow:hidden}
         .cat-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
-        /* Cat table */
         #catTable th{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#a0a0ab;padding:8px 10px;border-bottom:2px solid #f0f0f2;text-align:right;white-space:nowrap}
         #catTable th:first-child{text-align:left}
         #catTable td{font-size:11px;padding:7px 10px;border-bottom:1px solid #f5f5f7;text-align:right;white-space:nowrap}
@@ -253,7 +242,6 @@
         #catTable tr:hover td{background:#f5f8ff}
         .cat-color-dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;flex-shrink:0}
 
-        /* Skeleton */
         @keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
     </style>
 </head>
@@ -283,14 +271,12 @@
     </div>
 </div>
 
-<!-- TABLE VIEW -->
 <div id="tableSection">
     <div class="table-card" id="tableCard">
         <div class="status-box">Завантаження…</div>
     </div>
 </div>
 
-<!-- DYNAMICS VIEW -->
 <div class="dyn-panel" id="dynPanel">
     <div class="dyn-controls">
         <span class="dyn-ctrl-title">Показник</span>
@@ -303,7 +289,6 @@
     </div>
 </div>
 
-<!-- RATING VIEW -->
 <div class="rating-panel" id="ratingPanel">
     <div class="metric-bar">
         <div style="display:flex;align-items:center;padding:6px 10px;border-bottom:1px solid #f0f0f2;gap:8px;flex-wrap:wrap">
@@ -319,7 +304,6 @@
     <div class="ranking-grid" id="rankingGrid"></div>
 </div>
 
-<!-- CATEGORIES VIEW -->
 <div class="cat-panel" id="catPanel">
     <div id="catSummaryBanner"></div>
     <div id="catDonutWrap" style="background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:16px;margin-bottom:12px;display:none">
@@ -341,7 +325,6 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdFA0KeLd--Xe-
 
 const MONTHS_UK = ['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
 
-// Групи колонок для відображення
 const COL_GROUPS = [
     { name:'Товарообіг', cls:'gh-to', cols:[
         { key:'ТО', label:'ТО', badge:'b-to', fmt:'money' },
@@ -379,7 +362,6 @@ const COL_GROUPS = [
     ]},
 ];
 
-// Метрики для рейтингу
 const RATING_METRICS = [
     { key:'ТО',           label:'ТО',        color:'#0071e3', fmt:'money', higher:true, group:'main' },
     { key:'ACC',          label:'ACC',        color:'#ff9500', fmt:'money', higher:true, group:'main' },
@@ -390,7 +372,6 @@ const RATING_METRICS = [
     { key:'Ср. Чек',      label:'Ср.Чек',     color:'#5856d6', fmt:'money', higher:true, group:'main' },
     { key:'КПЧ',          label:'КПЧ',        color:'#00b388', fmt:'dec2',  higher:true, group:'main' },
     { key:'CSI',          label:'CSI',        color:'#ff6b35', fmt:'dec2',  higher:true, group:'main' },
-    // Категорії
     { key:'__all_cat__', label:'Всі кат.', color:'#5856d6', fmt:'money', higher:true, group:'cat', allCat:true },
     { key:'AV',  label:'AV',  color:'#c8392b', fmt:'money', higher:true, group:'cat' },
     { key:'DIG', label:'DIG', color:'#e67e22', fmt:'money', higher:true, group:'cat' },
@@ -400,7 +381,6 @@ const RATING_METRICS = [
     { key:'SDA', label:'SDA', color:'#d35400', fmt:'money', higher:true, group:'cat' },
 ];
 
-// Всі метрики для динаміки
 const DYN_METRICS = [
     ...RATING_METRICS,
     { key:'Шт',   label:'Шт',    color:'#0071e3', fmt:'int',   group:'main' },
@@ -408,7 +388,6 @@ const DYN_METRICS = [
     { key:'ASP',  label:'ASP',   color:'#2c3e50', fmt:'money', group:'main' },
 ];
 
-// STATE
 let allData = [];
 let allYears = [], allMonths = [], allSellers = [];
 let selSellers = new Set();
@@ -420,7 +399,6 @@ let dynMetricKey = 'ТО';
 let dynSellerSet = new Set();
 let dynChartInstance = null;
 
-// PARSE CSV
 function parseCSV(text){
     const rows=[];let row=[],col='',inQ=false;
     for(let i=0;i<text.length;i++){
@@ -445,7 +423,6 @@ function toN(v){
     const n=parseFloat(s);return isNaN(n)?null:n;
 }
 
-// Маппінг назв колонок CSV → канонічний ключ
 const COL_NAME_MAP = {
     'то':'ТО','товарообіг':'ТО','товарооборот':'ТО','turnover':'ТО',
     'шт':'Шт','штуки':'Шт','шт ':'Шт','кількість':'Шт','кіл-сть':'Шт','qty':'Шт','count':'Шт',
@@ -509,7 +486,6 @@ function findIdx(header,keys){
     return -1;
 }
 
-// FORMAT
 function fmtV(v,type){
     if(v===null||v===undefined)return'—';
     const n=Number(v);if(isNaN(n))return String(v);
@@ -525,7 +501,6 @@ function fmtV(v,type){
     }
 }
 
-// FILTER
 function ym(y,m){return y*100+m;}
 function ymKey(y,m){return y+'_'+m;}
 
@@ -537,7 +512,6 @@ function filteredData(){
     });
 }
 
-// Агрегація
 const PCT_KEYS=new Set(['% Доля ACC','Доля Послуг','Конверсія ПК','Конверсія ПК Offline','КПЧ','ASP','Ср. Чек']);
 function aggregate(rows){
     if(!rows.length)return null;
@@ -553,35 +527,39 @@ function aggregate(rows){
     return res;
 }
 
-// ── FILTERS RENDER ──
 function getAllPairs(){
     return [...new Set(allData.map(r=>ym(r.рік,r.місяць)))].sort((a,b)=>a-b)
         .map(v=>({y:Math.floor(v/100), m:v%100, key:ymKey(Math.floor(v/100),v%100)}));
 }
 
+// ── FIX #1: Кнопка "Всі" з правильним toggle ──
 function renderFilters(){
     const pairs=getAllPairs();
     if(!pairs.length) return;
 
-    // За замовчуванням — всі вибрані
     if(selPeriods.size===0) pairs.forEach(p=>selPeriods.add(p.key));
 
     const pp=document.getElementById('periodPills');
     pp.innerHTML='';
 
-    // ✅ FIX #1: Кнопка "Всі" завжди вибирає ВСІ періоди
+    // ✅ FIX #1: Кнопка "Всі" з правильним toggle
     const allActive=selPeriods.size===pairs.length && pairs.length>0;
     const ab=document.createElement('button');
     ab.className='pill'+(allActive?' active':'');
     ab.textContent='Всі';
     ab.onclick=()=>{
-        // Завжди вибираємо ВСІ періоди при кліку на "Всі"
-        pairs.forEach(p=>selPeriods.add(p.key));
+        if(allActive){
+            // Якщо всі вибрані — знімаємо всі (але залишаємо останній)
+            selPeriods.clear();
+            selPeriods.add(pairs[pairs.length-1].key);
+        } else {
+            // Якщо не всі вибрані — вибираємо всі
+            pairs.forEach(p=>selPeriods.add(p.key));
+        }
         renderFilters();refresh();
     };
     pp.appendChild(ab);
 
-    // Пілюля на кожен місяць-рік
     pairs.forEach(p=>{
         const b=document.createElement('button');
         b.className='pill'+(selPeriods.has(p.key)?' active':'');
@@ -597,14 +575,17 @@ function renderFilters(){
         pp.appendChild(b);
     });
 
-    // Продавці — "Всі" toggle
     const sp=document.getElementById('sellerPills');sp.innerHTML='';
     const allSellersActive=selSellers.size===0;
     const sab=document.createElement('button');
     sab.className='pill'+(allSellersActive?' active':'');
     sab.textContent='Всі';
     sab.onclick=()=>{
-        selSellers.clear();
+        if(allSellersActive){
+            if(allSellers.length>0) selSellers.add(allSellers[0]);
+        } else {
+            selSellers.clear();
+        }
         renderFilters();refresh();
     };
     sp.appendChild(sab);
@@ -618,28 +599,19 @@ function renderFilters(){
     });
 }
 
-function mkPillAll(container,text,active,onclick){
-    const b=document.createElement('button');b.className='pill'+(active?' active':'');b.textContent=text;b.onclick=onclick;container.appendChild(b);
-}
-function mkPill(container,text,active,onclick,attr,val){
-    const b=document.createElement('button');b.className='pill'+(active?' active':'');b.textContent=text;if(attr)b.setAttribute(attr,val);b.onclick=onclick;container.appendChild(b);
-}
+function mkPillAll(container,text,active,onclick){const b=document.createElement('button');b.className='pill'+(active?' active':'');b.textContent=text;b.onclick=onclick;container.appendChild(b);}
+function mkPill(container,text,active,onclick,attr,val){const b=document.createElement('button');b.className='pill'+(active?' active':'');b.textContent=text;if(attr)b.setAttribute(attr,val);b.onclick=onclick;container.appendChild(b);}
 function updFilters(){
     document.querySelectorAll('#sellerPills .pill[data-seller]').forEach(b=>{b.className='pill'+((selSellers.size===0||selSellers.has(b.dataset.seller))?' active':'');});
     document.querySelector('#sellerPills .pill:not([data-seller])')?.classList.toggle('active',selSellers.size===0);
 }
 function refresh(){updFilters();if(viewMode==='table')renderTable();else if(viewMode==='rating')renderRating();else if(viewMode==='cat')renderCat();else{renderDynControls();renderDynChart();}}
 
-// ── TABLE ──
 function renderTable(){
     const card=document.getElementById('tableCard');card.innerHTML='';
     const data=filteredData();
     const byS={};
-    data.forEach(r=>{
-        const k=r.продавець;
-        if(!byS[k])byS[k]=[];
-        byS[k].push(r);
-    });
+    data.forEach(r=>{const k=r.продавець;if(!byS[k])byS[k]=[];byS[k].push(r);});
     const sellers=Object.keys(byS).sort();
     if(!sellers.length){card.innerHTML='<div class="status-box">Немає даних за обраний фільтр</div>';return;}
     const hint=document.createElement('div');hint.className='table-hint';
@@ -660,109 +632,46 @@ function renderTable(){
     const thead=document.createElement('thead');
     const tr1=document.createElement('tr');
     const thCorner=document.createElement('th');thCorner.className='col-fix';thCorner.rowSpan=2;thCorner.textContent='Продавець';tr1.appendChild(thCorner);
-    COL_GROUPS.forEach((g,gi)=>{
-        const th=document.createElement('th');th.colSpan=g.cols.length;th.textContent=g.name;
-        th.className='gh '+g.cls+(gi>0?' grp-start':'');tr1.appendChild(th);
-    });
+    COL_GROUPS.forEach((g,gi)=>{const th=document.createElement('th');th.colSpan=g.cols.length;th.textContent=g.name;th.className='gh '+g.cls+(gi>0?' grp-start':'');tr1.appendChild(th);});
     thead.appendChild(tr1);
     const tr2=document.createElement('tr');
-    COL_GROUPS.forEach((g,gi)=>{
-        g.cols.forEach((col,ci)=>{
-            const th=document.createElement('th');th.textContent=col.label;
-            th.className=g.cls+(ci===0&&gi>0?' grp-start':'');tr2.appendChild(th);
-        });
-    });
+    COL_GROUPS.forEach((g,gi)=>{g.cols.forEach((col,ci)=>{const th=document.createElement('th');th.textContent=col.label;th.className=g.cls+(ci===0&&gi>0?' grp-start':'');tr2.appendChild(th);});});
     thead.appendChild(tr2);
     tbl.appendChild(thead);
     const tbody=document.createElement('tbody');
     sellers.forEach(seller=>{
-        const agg=aggregate(byS[seller]);
-        if(!agg)return;
+        const agg=aggregate(byS[seller]);if(!agg)return;
         const uniqueMonths=new Set(byS[seller].map(r=>r.рік+'-'+r.місяць)).size;
         const avgTO=agg['ТО']!=null&&uniqueMonths>0?agg['ТО']/uniqueMonths:null;
         const tr=document.createElement('tr');
         const tdN=document.createElement('td');tdN.className='col-fix';tdN.textContent=seller;tr.appendChild(tdN);
-        COL_GROUPS.forEach((g,gi)=>{
-            g.cols.forEach((col,ci)=>{
-                const td=document.createElement('td');
-                if(ci===0&&gi>0)td.classList.add('grp-start');
-                let v;
-                if(col.special==='months')      v=uniqueMonths;
-                else if(col.special==='avg_to') v=avgTO;
-                else                            v=agg[col.key];
-                if(v!==undefined&&v!==null){
-                    const sp=document.createElement('span');sp.className='badge '+col.badge;
-                    sp.textContent=fmtV(v,col.fmt);td.appendChild(sp);
-                } else{td.textContent='—';td.style.color='#ccc';}
-                tr.appendChild(td);
-            });
-        });
+        COL_GROUPS.forEach((g,gi)=>{g.cols.forEach((col,ci)=>{const td=document.createElement('td');if(ci===0&&gi>0)td.classList.add('grp-start');let v;if(col.special==='months')v=uniqueMonths;else if(col.special==='avg_to')v=avgTO;else v=agg[col.key];if(v!==undefined&&v!==null){const sp=document.createElement('span');sp.className='badge '+col.badge;sp.textContent=fmtV(v,col.fmt);td.appendChild(sp);}else{td.textContent='—';td.style.color='#ccc';}tr.appendChild(td);});});
         tbody.appendChild(tr);
     });
-    if(sellers.length>1){
-        const allAgg=aggregate(data);
-        if(allAgg){
-            const tr=document.createElement('tr');tr.className='total-row';
-            const tdN=document.createElement('td');tdN.className='col-fix';tdN.textContent='∑ Разом';tr.appendChild(tdN);
-            COL_GROUPS.forEach((g,gi)=>{
-                g.cols.forEach((col,ci)=>{
-                    const td=document.createElement('td');
-                    if(ci===0&&gi>0)td.classList.add('grp-start');
-                    if(col.special){td.textContent='—';td.style.color='#ccc';tr.appendChild(td);return;}
-                    const v=allAgg[col.key];
-                    if(v!==undefined&&v!==null){
-                        const sp=document.createElement('span');sp.className='badge '+col.badge;
-                        sp.textContent=fmtV(v,col.fmt);td.appendChild(sp);
-                    } else{td.textContent='—';td.style.color='#ccc';}
-                    tr.appendChild(td);
-                });
-            });
-            tbody.appendChild(tr);
-        }
-    }
+    if(sellers.length>1){const allAgg=aggregate(data);if(allAgg){const tr=document.createElement('tr');tr.className='total-row';const tdN=document.createElement('td');tdN.className='col-fix';tdN.textContent='∑ Разом';tr.appendChild(tdN);COL_GROUPS.forEach((g,gi)=>{g.cols.forEach((col,ci)=>{const td=document.createElement('td');if(ci===0&&gi>0)td.classList.add('grp-start');if(col.special){td.textContent='—';td.style.color='#ccc';tr.appendChild(td);return;}const v=allAgg[col.key];if(v!==undefined&&v!==null){const sp=document.createElement('span');sp.className='badge '+col.badge;sp.textContent=fmtV(v,col.fmt);td.appendChild(sp);}else{td.textContent='—';td.style.color='#ccc';}tr.appendChild(td);});});tbody.appendChild(tr);}}}
     tbl.appendChild(tbody);wrap.appendChild(tbl);
 }
 
-// ── RATING ──
 function setAvgMode(on){
     avgMode=on;
     const btnTotal=document.getElementById('modeBtnTotal');
     const btnAvg=document.getElementById('modeBtnAvg');
     const desc=document.getElementById('modeDesc');
-    if(on){
-        btnAvg.style.background='white';btnAvg.style.color='#1d1d1f';btnAvg.style.boxShadow='0 1px 4px rgba(0,0,0,.12)';
-        btnTotal.style.background='transparent';btnTotal.style.color='#6e6e73';btnTotal.style.boxShadow='none';
-        desc.textContent='Сума ÷ кількість місяців з продажами';
-    } else {
-        btnTotal.style.background='white';btnTotal.style.color='#1d1d1f';btnTotal.style.boxShadow='0 1px 4px rgba(0,0,0,.12)';
-        btnAvg.style.background='transparent';btnAvg.style.color='#6e6e73';btnAvg.style.boxShadow='none';
-        desc.textContent='Загальна сума за обраний період';
-    }
+    if(on){btnAvg.style.background='white';btnAvg.style.color='#1d1d1f';btnAvg.style.boxShadow='0 1px 4px rgba(0,0,0,.12)';btnTotal.style.background='transparent';btnTotal.style.color='#6e6e73';btnTotal.style.boxShadow='none';desc.textContent='Сума ÷ кількість місяців з продажами';}
+    else{btnTotal.style.background='white';btnTotal.style.color='#1d1d1f';btnTotal.style.boxShadow='0 1px 4px rgba(0,0,0,.12)';btnAvg.style.background='transparent';btnAvg.style.color='#6e6e73';btnAvg.style.boxShadow='none';desc.textContent='Загальна сума за обраний період';}
     renderRating();
 }
 
 function renderMetricPills(){
     const cont=document.getElementById('metricPills');cont.innerHTML='';
-    const wrap=document.createElement('div');
-    wrap.style.cssText='display:flex;flex-wrap:wrap;gap:4px;padding:7px 10px;align-items:center';
+    const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-wrap:wrap;gap:4px;padding:7px 10px;align-items:center';
     RATING_METRICS.forEach((m,idx)=>{
-        if(m.group==='cat' && (idx===0||RATING_METRICS[idx-1].group!=='cat')){
-            const sep=document.createElement('div');
-            sep.style.cssText='width:100%;display:flex;align-items:center;gap:6px;margin:3px 0 2px';
-            sep.innerHTML='<span style="font-size:9px;font-weight:700;color:#a0a0ab;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Категорії</span><div style="flex:1;height:1px;background:#f0f0f2"></div>';
-            wrap.appendChild(sep);
-        }
-        const b=document.createElement('button');
-        b.className='mpill'+(m.key===activeMetricKey?' active':'');
-        b.textContent=m.label;
-        if(m.key===activeMetricKey){b.style.background=m.color;b.style.borderColor=m.color;}
-        b.onclick=()=>{activeMetricKey=m.key;renderMetricPills();renderRating();};
-        wrap.appendChild(b);
+        if(m.group==='cat' && (idx===0||RATING_METRICS[idx-1].group!=='cat')){const sep=document.createElement('div');sep.style.cssText='width:100%;display:flex;align-items:center;gap:6px;margin:3px 0 2px';sep.innerHTML='<span style="font-size:9px;font-weight:700;color:#a0a0ab;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Категорії</span><div style="flex:1;height:1px;background:#f0f0f2"></div>';wrap.appendChild(sep);}
+        const b=document.createElement('button');b.className='mpill'+(m.key===activeMetricKey?' active':'');b.textContent=m.label;if(m.key===activeMetricKey){b.style.background=m.color;b.style.borderColor=m.color;}b.onclick=()=>{activeMetricKey=m.key;renderMetricPills();renderRating();};wrap.appendChild(b);
     });
     cont.appendChild(wrap);
 }
 
-// ── DYNAMICS ──
 const DYN_COLORS=['#0071e3','#ff3b30','#34c759','#ff9500','#af52de','#5856d6','#00b388','#ff6b35','#c8392b','#1abc9c'];
 
 function renderDynControls(){
@@ -770,37 +679,19 @@ function renderDynControls(){
     const g1=document.createElement('div');g1.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px';
     const g2=document.createElement('div');g2.style.cssText='display:flex;flex-wrap:wrap;gap:5px;padding-top:5px;border-top:1px solid #f2f2f4';
     const g2lbl=document.createElement('div');g2lbl.style.cssText='width:100%;font-size:9px;font-weight:700;color:#86868b;text-transform:uppercase;margin-bottom:3px';g2lbl.textContent='Категорії';g2.appendChild(g2lbl);
-    DYN_METRICS.forEach(m=>{
-        const b=document.createElement('button');b.className='dmpill'+(m.key===dynMetricKey?' active':'');b.textContent=m.label;
-        if(m.key===dynMetricKey){b.style.background=m.color;b.style.borderColor=m.color;}
-        b.onclick=()=>{dynMetricKey=m.key;renderDynControls();renderDynChart();};
-        (m.group==='cat'?g2:g1).appendChild(b);
-    });
+    DYN_METRICS.forEach(m=>{const b=document.createElement('button');b.className='dmpill'+(m.key===dynMetricKey?' active':'');b.textContent=m.label;if(m.key===dynMetricKey){b.style.background=m.color;b.style.borderColor=m.color;}b.onclick=()=>{dynMetricKey=m.key;renderDynControls();renderDynChart();};(m.group==='cat'?g2:g1).appendChild(b);});
     mp.appendChild(g1);mp.appendChild(g2);
     const sp=document.getElementById('dynSellerPills');sp.innerHTML='';
     const visibleSellers=[...new Set(filteredData().map(r=>r.продавець))].sort();
     if(!visibleSellers.length){sp.innerHTML='<span style="font-size:11px;color:#86868b">Немає даних</span>';return;}
     if(dynSellerSet.size===0&&visibleSellers.length)dynSellerSet.add(visibleSellers[0]);
-    visibleSellers.forEach((s,si)=>{
-        const color=DYN_COLORS[si%DYN_COLORS.length];
-        const b=document.createElement('button');b.className='spill'+(dynSellerSet.has(s)?' active':'');b.textContent=s.split(' ').slice(0,2).join(' ');
-        if(dynSellerSet.has(s)){b.style.background=color;b.style.borderColor=color;}
-        b.onclick=()=>{
-            if(dynSellerSet.has(s)){if(dynSellerSet.size>1)dynSellerSet.delete(s);}else dynSellerSet.add(s);
-            renderDynControls();renderDynChart();
-        };
-        sp.appendChild(b);
-    });
+    visibleSellers.forEach((s,si)=>{const color=DYN_COLORS[si%DYN_COLORS.length];const b=document.createElement('button');b.className='spill'+(dynSellerSet.has(s)?' active':'');b.textContent=s.split(' ').slice(0,2).join(' ');if(dynSellerSet.has(s)){b.style.background=color;b.style.borderColor=color;}b.onclick=()=>{if(dynSellerSet.has(s)){if(dynSellerSet.size>1)dynSellerSet.delete(s);}else dynSellerSet.add(s);renderDynControls();renderDynChart();};sp.appendChild(b);});
 }
 
 function renderDynChart(){
     const body=document.getElementById('dynChartBody');
-    if(dynSellerSet.size===0){
-        if(dynChartInstance){dynChartInstance.destroy();dynChartInstance=null;}
-        body.innerHTML='<div class="dyn-empty">📊 Оберіть продавця</div>';return;
-    }
-    const fd=filteredData();
-    if(!fd.length){body.innerHTML='<div class="dyn-empty">Немає даних</div>';return;}
+    if(dynSellerSet.size===0){if(dynChartInstance){dynChartInstance.destroy();dynChartInstance=null;}body.innerHTML='<div class="dyn-empty">📊 Оберіть продавця</div>';return;}
+    const fd=filteredData();if(!fd.length){body.innerHTML='<div class="dyn-empty">Немає даних</div>';return;}
     const allPairs=getAllPairs().filter(p=>selPeriods.has(p.key));
     const xYears=[...new Set(allPairs.map(p=>p.y))].sort((a,b)=>a-b);
     const multiYear=xYears.length>1;
@@ -810,86 +701,21 @@ function renderDynChart(){
     const sellers=[...dynSellerSet];
     const datasets=[];
     const DYN_COLORS=['#0071e3','#34c759','#ff9500','#af52de','#ff3b30','#5856d6','#00b388','#ff6b35','#c8392b','#1abc9c'];
-    sellers.forEach((seller,si)=>{
-        const color=DYN_COLORS[si%DYN_COLORS.length];
-        const label=seller.split(' ').slice(0,2).join(' ');
-        const data=allPairs.map(p=>{
-            const rows=allData.filter(r=>r.рік===p.y&&r.місяць===p.m&&r.продавець===seller);
-            if(!rows.length)return null;
-            const vals=rows.map(r=>r[dynMetricKey]).filter(v=>v!=null);
-            if(!vals.length)return null;
-            return isPct?vals.reduce((a,b)=>a+b,0)/vals.length:vals.reduce((a,b)=>a+b,0);
-        });
-        if(data.every(v=>v===null))return;
-        datasets.push({label,data,borderColor:color,backgroundColor:color+'18',pointBackgroundColor:color,pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:7,tension:0.35,fill:false,spanGaps:true});
-    });
+    sellers.forEach((seller,si)=>{const color=DYN_COLORS[si%DYN_COLORS.length];const label=seller.split(' ').slice(0,2).join(' ');const data=allPairs.map(p=>{const rows=allData.filter(r=>r.рік===p.y&&r.місяць===p.m&&r.продавець===seller);if(!rows.length)return null;const vals=rows.map(r=>r[dynMetricKey]).filter(v=>v!=null);if(!vals.length)return null;return isPct?vals.reduce((a,b)=>a+b,0)/vals.length:vals.reduce((a,b)=>a+b,0);});if(data.every(v=>v===null))return;datasets.push({label,data,borderColor:color,backgroundColor:color+'18',pointBackgroundColor:color,pointBorderColor:'#fff',pointBorderWidth:1.5,pointRadius:4,pointHoverRadius:7,tension:0.35,fill:false,spanGaps:true});});
     if(dynChartInstance){dynChartInstance.destroy();dynChartInstance=null;}
     body.innerHTML='<div class="dyn-chart-wrap"><canvas id="dynCanvas"></canvas></div>';
-    const smartLabels={
-        id:'sl',
-        afterDatasetsDraw(chart){
-            const ctx=chart.ctx;ctx.save();
-            const FS=9,PX=3,PY=2,LH=FS+PY*2+2,GAP=3;
-            ctx.font=`600 ${FS}px Inter,sans-serif`;
-            const pts=[];
-            chart.data.datasets.forEach((ds,di)=>{
-                const meta=chart.getDatasetMeta(di);if(meta.hidden)return;
-                ds.data.forEach((val,pi)=>{
-                    if(val===null||val===undefined)return;
-                    const el=meta.data[pi];if(!el)return;
-                    const text=fmtV(val,metricMeta.fmt);
-                    pts.push({x:el.x,y:el.y,text,color:ds.borderColor,tw:ctx.measureText(text).width});
-                });
-            });
-            const byX={};pts.forEach(p=>{const k=Math.round(p.x);if(!byX[k])byX[k]=[];byX[k].push(p);});
-            Object.values(byX).forEach(grp=>{
-                grp.sort((a,b)=>a.y-b.y);
-                grp.forEach(p=>{p.ly=p.y-LH/2-5;});
-                for(let it=0;it<20;it++){let ch=false;for(let i=1;i<grp.length;i++){const pr=grp[i-1],cu=grp[i],df=(pr.ly+LH+GAP)-cu.ly;if(df>0){pr.ly-=df/2;cu.ly+=df/2;ch=true;}}if(!ch)break;}
-                grp.forEach(p=>{
-                    const bw=p.tw+PX*2,bh=FS+PY*2,bx=p.x-bw/2,by=p.ly-bh/2;
-                    ctx.shadowColor='rgba(0,0,0,0.13)';ctx.shadowBlur=3;ctx.shadowOffsetY=1;
-                    ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(bx,by,bw,bh,3);ctx.fill();
-                    ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-                    ctx.strokeStyle=p.color;ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(bx,by,bw,bh,3);ctx.stroke();
-                    ctx.fillStyle=p.color;ctx.font=`700 ${FS}px Inter,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-                    ctx.fillText(p.text,p.x,by+bh/2);ctx.textAlign='left';ctx.textBaseline='alphabetic';
-                    const lsy=by+bh;if(p.y-lsy>5){ctx.strokeStyle=p.color+'55';ctx.lineWidth=1;ctx.setLineDash([2,2]);ctx.beginPath();ctx.moveTo(p.x,lsy);ctx.lineTo(p.x,p.y-4);ctx.stroke();ctx.setLineDash([]);}
-                });
-            });
-            ctx.restore();
-        }
-    };
+    const smartLabels={id:'sl',afterDatasetsDraw(chart){const ctx=chart.ctx;ctx.save();const FS=9,PX=3,PY=2,LH=FS+PY*2+2,GAP=3;ctx.font=`600 ${FS}px Inter,sans-serif`;const pts=[];chart.data.datasets.forEach((ds,di)=>{const meta=chart.getDatasetMeta(di);if(meta.hidden)return;ds.data.forEach((val,pi)=>{if(val===null||val===undefined)return;const el=meta.data[pi];if(!el)return;const text=fmtV(val,metricMeta.fmt);pts.push({x:el.x,y:el.y,text,color:ds.borderColor,tw:ctx.measureText(text).width});});});const byX={};pts.forEach(p=>{const k=Math.round(p.x);if(!byX[k])byX[k]=[];byX[k].push(p);});Object.values(byX).forEach(grp=>{grp.sort((a,b)=>a.y-b.y);grp.forEach(p=>{p.ly=p.y-LH/2-5;});for(let it=0;it<20;it++){let ch=false;for(let i=1;i<grp.length;i++){const pr=grp[i-1],cu=grp[i],df=(pr.ly+LH+GAP)-cu.ly;if(df>0){pr.ly-=df/2;cu.ly+=df/2;ch=true;}}if(!ch)break;}grp.forEach(p=>{const bw=p.tw+PX*2,bh=FS+PY*2,bx=p.x-bw/2,by=p.ly-bh/2;ctx.shadowColor='rgba(0,0,0,0.13)';ctx.shadowBlur=3;ctx.shadowOffsetY=1;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(bx,by,bw,bh,3);ctx.fill();ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.strokeStyle=p.color;ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(bx,by,bw,bh,3);ctx.stroke();ctx.fillStyle=p.color;ctx.font=`700 ${FS}px Inter,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.text,p.x,by+bh/2);ctx.textAlign='left';ctx.textBaseline='alphabetic';const lsy=by+bh;if(p.y-lsy>5){ctx.strokeStyle=p.color+'55';ctx.lineWidth=1;ctx.setLineDash([2,2]);ctx.beginPath();ctx.moveTo(p.x,lsy);ctx.lineTo(p.x,p.y-4);ctx.stroke();ctx.setLineDash([]);}});});ctx.restore();}};
     const ctx2=document.getElementById('dynCanvas').getContext('2d');
-    dynChartInstance=new Chart(ctx2,{
-        type:'line',data:{labels,datasets},plugins:[smartLabels],
-        options:{
-            responsive:true,maintainAspectRatio:false,
-            interaction:{mode:'index',intersect:false},
-            layout:{padding:{top:28,left:6,right:6}},
-            plugins:{
-                legend:{display:sellers.length>1,position:'top',labels:{font:{family:'Inter',size:10},boxWidth:16,padding:10}},
-                tooltip:{backgroundColor:'#1d1d1f',titleFont:{family:'Inter',size:11},bodyFont:{family:'Inter',size:10},padding:9,
-                    callbacks:{label:c=>` ${c.dataset.label}: ${fmtV(c.raw,metricMeta.fmt)}`}}
-            },
-            scales:{
-                x:{grid:{color:'#f0f0f0'},ticks:{font:{family:'Inter',size:9},color:'#86868b',maxRotation:45}},
-                y:{grid:{color:'#f0f0f0'},ticks:{font:{family:'Inter',size:9},color:'#86868b',callback:v=>fmtV(v,metricMeta.fmt)}}
-            }
-        }
-    });
+    dynChartInstance=new Chart(ctx2,{type:'line',{labels,datasets},plugins:[smartLabels],options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:28,left:6,right:6}},plugins:{legend:{display:sellers.length>1,position:'top',labels:{font:{family:'Inter',size:10},boxWidth:16,padding:10}},tooltip:{backgroundColor:'#1d1d1f',titleFont:{family:'Inter',size:11},bodyFont:{family:'Inter',size:10},padding:9,callbacks:{label:c=>` ${c.dataset.label}: ${fmtV(c.raw,metricMeta.fmt)}`}}},scales:{x:{grid:{color:'#f0f0f0'},ticks:{font:{family:'Inter',size:9},color:'#86868b',maxRotation:45}},y:{grid:{color:'#f0f0f0'},ticks:{font:{family:'Inter',size:9},color:'#86868b',callback:v=>fmtV(v,metricMeta.fmt)}}}}});
 }
 
-// ── RATING RENDER (FIXED) ──
+// ── FIX #2: RATING RENDER — відхилення від середнього по магазину ──
 function renderRating(){
     renderMetricPills();
     const data=filteredData();
     const grid=document.getElementById('rankingGrid');
     showRatingSkeleton(grid, 7);
-    if(!data.length){
-        setTimeout(()=>{grid.innerHTML='<div class="status-box">Немає даних</div>';},150);
-        return;
-    }
+    if(!data.length){setTimeout(()=>{grid.innerHTML='<div class="status-box">Немає даних</div>';},150);return;}
     setTimeout(()=>{
         grid.innerHTML='';
         const m=RATING_METRICS.find(x=>x.key===activeMetricKey)||RATING_METRICS[0];
@@ -918,12 +744,12 @@ function renderRating(){
         scored.sort((a,b)=>m.higher?b.val-a.val:a.val-b.val);
         const maxVal=scored[0]?.val||1;
 
-        // ✅ FIX #2: Розрахунок зваженого середнього по магазину
+        // ✅ FIX #2: Розрахунок СЕРЕДНЬОГО ПО МАГАЗИНУ для конкретної категорії/метрики
         const isAvgByNatureGlobal = PCT_KEYS.has(m.key);
         const totalMonthsAll = scored.reduce((s,x)=>s+x.uniqueMonths, 0);
         const totalRawAll    = scored.reduce((s,x)=>s+(x.rawTotal!=null?x.rawTotal:0), 0);
 
-        // Зважене середнє по магазину на місяць
+        // Зважене середнє по магазину на місяць (для цієї метрики/категорії)
         const storeMonthlyAvg = isAvgByNatureGlobal && scored.length>0
             ? scored.reduce((s,x)=>s+(x.val!=null?x.val:0),0) / scored.length
             : (totalMonthsAll>0 ? totalRawAll/totalMonthsAll : 0);
@@ -937,7 +763,6 @@ function renderRating(){
             </div>`;
         const div=(color='#f0f0f2')=>`<div style="width:1px;background:${color};flex-shrink:0"></div>`;
 
-        // Потенціал: хто має місячний показник нижче середнього
         const totalPotential = (m.fmt==='money'||m.fmt==='int')
             ? scored.filter(x => {
                 const sellerAvg = x.isAvgByNature ? x.val : (x.rawTotal/x.uniqueMonths);
@@ -966,10 +791,11 @@ function renderRating(){
                     ? `Сер./міс: ${fmtV(item.monthlyVal, m.fmt)}`
                     : '');
 
-            // ✅ FIX #2: Відхилення від зваженого середнього по магазину
+            // ✅ FIX #2: Відхилення = місячне продавця − місячне по магазину
             const sellerMonthlyAvg = item.isAvgByNature 
                 ? item.val 
                 : (item.uniqueMonths>0 && item.rawTotal!=null ? item.rawTotal/item.uniqueMonths : null);
+            
             const diff    = sellerMonthlyAvg!=null && storeMonthlyAvg!=null ? sellerMonthlyAvg - storeMonthlyAvg : null;
             const diffPct = storeMonthlyAvg && diff!=null ? (diff/storeMonthlyAvg*100) : 0;
             const diffColor = diff>=0 ? '#1a7f37' : '#c0392b';
@@ -1004,7 +830,6 @@ function renderRating(){
     }, 180);
 }
 
-// ── SKELETON HELPERS ──
 function showTableSkeleton(card, rows=6, cols=5){
     card.innerHTML='';
     const wrap=document.createElement('div');
@@ -1012,7 +837,6 @@ function showTableSkeleton(card, rows=6, cols=5){
     for(let r=0;r<rows;r++){
         const row=document.createElement('div');
         row.className='tbl-row-skel';
-        const widths=['wide','','','','','','',''];
         for(let c=0;c<cols;c++){
             const cell=document.createElement('div');
             cell.className='tbl-row-skel-cell skel'+(c===0?' wide':'');
@@ -1048,7 +872,6 @@ function animateCards(grid){
     });
 }
 
-// ── CATEGORIES VIEW ──
 const CAT_KEYS = ['AV','IT','DIG','SDA','MDA','NIP','ACC'];
 const CAT_COLORS = {
     'AV' :'#c8392b', 'IT' :'#8e44ad', 'DIG':'#e67e22',
@@ -1106,10 +929,10 @@ function renderCat(){
     catChartInstance=new Chart(canvas,{
         type:'doughnut',
         plugins:[ChartDataLabels],
-        data:{
+        {
             labels:sorted.map(k=>k),
             datasets:[{
-                data:sorted.map(k=>totals[k]),
+                sorted.map(k=>totals[k]),
                 backgroundColor:sorted.map(k=>CAT_COLORS[k]),
                 borderColor:'#fff',
                 borderWidth:3,
@@ -1227,7 +1050,6 @@ function setView(mode){
     else renderTable();
 }
 
-// ── INIT ──
 async function init(){
     showTableSkeleton(document.getElementById('tableCard'), 8, 6);
     try{
