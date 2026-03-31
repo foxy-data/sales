@@ -377,6 +377,19 @@
         .sm-tbl td:first-child { text-align: left; padding-left: 0; font-size: 11px; font-weight: 600; color: var(--color-text-secondary); }
         .sm-tbl tr.sm-plan-row td { color: var(--color-text-secondary); font-weight: 500; font-size: 11px; }
         .sm-tbl tr + tr td { border-top: 1px solid rgba(0,0,0,0.05); padding-top: 6px; }
+
+        /* --- Перемикач цілі --- */
+        .sm-target-bar { display:flex; gap:6px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+        .sm-target-label { font-size:10px; font-weight:700; text-transform:uppercase; color:var(--color-text-secondary); margin-right:4px; letter-spacing:0.04em; }
+        .sm-target-btn {
+            padding: 4px 11px; border-radius: 20px; border: 1.5px solid var(--color-border);
+            background: transparent; font-size: 12px; font-weight: 600; cursor: pointer;
+            color: var(--color-text-secondary); font-family: inherit; transition: all 0.18s;
+        }
+        .sm-target-btn.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+        .sm-target-btn:hover:not(.active) { border-color: var(--color-accent); color: var(--color-accent); }
+        .rest-positive { color: #ff3b30; font-weight:600; }
+        .rest-done { color: #34c759; font-weight:600; }
         .sm-sub { font-size: 9px; font-weight: 500; color: var(--color-text-secondary); display: block; margin-top: 1px; }
 
         .sm-pct {
@@ -559,6 +572,13 @@ const AUTH = {
                     <span class="store-metrics-date" id="sm-date">—</span>
                 </div>
                 <button class="store-metrics-refresh" onclick="loadStoreMetrics()">↻ Оновити</button>
+            </div>
+            <div class="sm-target-bar">
+                <span class="sm-target-label">Ціль:</span>
+                <button class="sm-target-btn active" onclick="setTarget(1.00, this)">100%</button>
+                <button class="sm-target-btn" onclick="setTarget(1.05, this)">105%</button>
+                <button class="sm-target-btn" onclick="setTarget(1.10, this)">110%</button>
+                <button class="sm-target-btn" onclick="setTarget(1.15, this)">115%</button>
             </div>
             <div id="store-metrics-content">
                 <div class="sm-loading">Завантаження...</div>
@@ -1013,6 +1033,15 @@ const AUTH = {
         renderStoreMetrics();
     }
 
+    let smTarget = 1.00; // поточна ціль (1.00 = 100%, 1.05 = 105%, ...)
+
+    function setTarget(val, btn) {
+        smTarget = val;
+        document.querySelectorAll('.sm-target-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderStoreMetrics();
+    }
+
     function renderStoreMetrics() {
         const today = new Date();
         const todayStr = today.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' });
@@ -1057,10 +1086,19 @@ const AUTH = {
         const fDola = v => v ? v.toFixed(2) + '%' : '—';
 
         function group(cls, icon, label, plan, fact, pct, prognTempo, prognPlan, rest, sub) {
+            // Ціль з урахуванням обраного множника
+            const targetVal = plan ? Math.round(plan * smTarget) : null;
+            const restToTarget = targetVal ? targetVal - fact : null;
+            const restStr = restToTarget === null ? '—'
+                : restToTarget > 0
+                    ? `<span class="rest-positive">−${formatFull(restToTarget)}</span>`
+                    : `<span class="rest-done">✓</span>`;
+
+            const pctFact = plan ? Math.round(fact / plan * 100) : null;
             const pctPrognTempo = plan && prognTempo ? Math.round(prognTempo / plan * 100) : null;
             const pctPrognPlan  = plan && prognPlan  ? Math.round(prognPlan  / plan * 100) : null;
-            const badgeTempo = pctPrognTempo !== null ? `<span class="sm-pct ${pctPrognTempo >= 100 ? 'pct-good' : pctPrognTempo >= 70 ? 'pct-mid' : 'pct-bad'}" style="font-size:9px">${pctPrognTempo}%</span>` : '';
-            const badgePlan  = pctPrognPlan  !== null ? `<span class="sm-pct ${pctPrognPlan  >= 100 ? 'pct-good' : pctPrognPlan  >= 70 ? 'pct-mid' : 'pct-bad'}" style="font-size:9px">${pctPrognPlan}%</span>` : '';
+            const badge = (p) => p !== null ? `<span class="sm-pct ${p >= 100 ? 'pct-good' : p >= 70 ? 'pct-mid' : 'pct-bad'}" style="font-size:9px">${p}%</span>` : '—';
+            const targetLabel = smTarget === 1 ? 'план' : `план×${smTarget.toFixed(2).replace('.','').replace(/^10/,'')}%`;
             return `
             <div class="sm-group ${cls}">
                 <div class="sm-group-title">${icon} ${label}</div>
@@ -1068,10 +1106,9 @@ const AUTH = {
                     <thead>
                         <tr>
                             <th></th>
-                            <th>Факт / План</th>
+                            <th>Сума</th>
                             <th>Вик.</th>
-                            <th>Прогноз</th>
-                            <th>% від плану</th>
+                            <th>Залишок до ${Math.round(smTarget*100)}%</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1079,29 +1116,25 @@ const AUTH = {
                             <td>План</td>
                             <td>${fV(plan)}</td>
                             <td>—</td>
-                            <td>—</td>
-                            <td>—</td>
+                            <td>${targetVal && targetVal !== plan ? '<span style="font-size:9px;color:#6e6e73">Ціль: ' + formatFull(targetVal) + '</span>' : '—'}</td>
                         </tr>
                         <tr>
                             <td>Факт${sub ? `<span class="sm-sub">${sub}</span>` : ''}</td>
                             <td>${fV(fact)}</td>
-                            <td>${pctBadge(fact, plan)}</td>
-                            <td>—</td>
-                            <td>—</td>
+                            <td>${badge(pctFact)}</td>
+                            <td>${restStr}</td>
                         </tr>
-                        <tr style="color:#007aff">
-                            <td><span style="font-size:9px;font-weight:600;text-transform:uppercase;color:#6e6e73">Прогн. темп</span></td>
+                        <tr style="border-top:1px dashed var(--color-border)">
+                            <td><span style="font-size:9px;font-weight:600;text-transform:uppercase;color:#6e6e73">Прогн.темп</span></td>
                             <td class="sm-val-prognoz">${fP(prognTempo)}</td>
-                            <td>—</td>
-                            <td style="font-size:9px;color:#6e6e73">екстраполяція</td>
-                            <td>${badgeTempo}</td>
+                            <td>${badge(pctPrognTempo)}</td>
+                            <td style="font-size:9px;color:#8e8e93">екстраполяція</td>
                         </tr>
-                        <tr style="color:#34c759">
-                            <td><span style="font-size:9px;font-weight:600;text-transform:uppercase;color:#6e6e73">Прогн. план</span></td>
+                        <tr>
+                            <td><span style="font-size:9px;font-weight:600;text-transform:uppercase;color:#6e6e73">Прогн.план</span></td>
                             <td class="sm-val-prognoz" style="color:#34c759">${fP(prognPlan)}</td>
-                            <td>—</td>
-                            <td style="font-size:9px;color:#6e6e73">факт + залишок плану</td>
-                            <td>${badgePlan}</td>
+                            <td>${badge(pctPrognPlan)}</td>
+                            <td style="font-size:9px;color:#8e8e93">факт + залишок</td>
                         </tr>
                     </tbody>
                 </table>
