@@ -117,6 +117,16 @@
         }
         @media (min-width: 1200px) { .banner-card { padding: 18px 20px; height: 185px; flex: 1 1 calc(14.28% - 13px); min-width: 175px; max-width: 235px; } }
         .banner-card:hover { transform: translateY(-4px); box-shadow: 0 14px 36px rgba(0,0,0,0.12); }
+        /* --- LOCKED BANNER --- */
+        .banner-card.banner-locked {
+            opacity: 0.45;
+            cursor: not-allowed;
+            filter: grayscale(0.3);
+        }
+        .banner-card.banner-locked:hover {
+            transform: none;
+            box-shadow: 0 2px 14px rgba(0,0,0,0.07);
+        }
 
         /* М'які пастельні фони без рамки */
         .banner-special     { background: linear-gradient(145deg, #eef2ff 0%, #e3eaff 100%); }
@@ -293,7 +303,88 @@
         .dpc-plan  { font-size:11px; color:var(--color-text-secondary); }
         .dpc-fact  { font-size:17px; font-weight:600; color:var(--color-text); }
         .dpc-rest  { font-size:11px; color:var(--color-text-secondary); margin-top:1px; }
+
+        /* --- STORE METRICS BLOCK --- */
+        .store-metrics-block {
+            background: var(--color-card-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 22px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-md);
+        }
+        .store-metrics-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .store-metrics-title {
+            font-size: 15px; font-weight: 700; color: var(--color-text);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .store-metrics-date {
+            font-size: 11px; color: var(--color-text-secondary);
+            background: #f5f5f7; padding: 3px 10px; border-radius: 8px;
+        }
+        .store-metrics-refresh {
+            background: none; border: 1px solid var(--color-border); border-radius: 8px;
+            padding: 4px 10px; font-size: 11px; font-weight: 500;
+            color: var(--color-text-secondary); cursor: pointer;
+            transition: all 0.2s; font-family: inherit;
+        }
+        .store-metrics-refresh:hover { color: var(--color-accent); border-color: var(--color-accent); }
+        .store-metrics-groups {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+        @media (max-width: 700px) { .store-metrics-groups { grid-template-columns: 1fr; } }
+        .sm-group {
+            background: #f5f5f7; border-radius: 16px; padding: 14px 16px;
+        }
+        .sm-group-title {
+            font-size: 9px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--color-text-secondary);
+            margin-bottom: 10px; display: flex; align-items: center; gap: 5px;
+        }
+        .sm-rows { display: flex; flex-direction: column; gap: 7px; }
+        .sm-row {
+            display: grid;
+            grid-template-columns: 90px 1fr 70px 70px 70px;
+            gap: 4px; align-items: center;
+        }
+        @media (max-width: 900px) {
+            .sm-row { grid-template-columns: 80px 1fr 60px 60px 60px; }
+        }
+        .sm-label { font-size: 10px; font-weight: 600; color: var(--color-text-secondary); }
+        .sm-val   { font-size: 12px; font-weight: 700; color: var(--color-text); text-align:right; }
+        .sm-pct-cell { text-align: center; }
+        .sm-pct {
+            font-size: 10px; font-weight: 700; padding: 2px 6px;
+            border-radius: 6px; display: inline-block; white-space: nowrap;
+        }
+        .sm-prognoz { font-size: 11px; font-weight: 600; color: #0071e3; text-align:right; }
+        .sm-rest { font-size: 10px; color: var(--color-text-secondary); text-align:right; }
+        .sm-col-hdr {
+            display: grid;
+            grid-template-columns: 90px 1fr 70px 70px 70px;
+            gap: 4px; margin-bottom: 4px;
+        }
+        @media (max-width: 900px) {
+            .sm-col-hdr { grid-template-columns: 80px 1fr 60px 60px 60px; }
+        }
+        .sm-col-hdr span {
+            font-size: 8px; font-weight: 700; text-transform: uppercase;
+            color: var(--color-text-secondary); letter-spacing: 0.04em;
+            text-align: right;
+        }
+        .sm-col-hdr span:first-child { text-align: left; }
+        .sm-col-hdr span:nth-child(3) { text-align: center; }
+        .sm-loading { text-align:center; color:var(--color-text-secondary); font-size:13px; padding:20px; }
+        .sm-group-to   { border-left: 3px solid #0071e3; }
+        .sm-group-serv { border-left: 3px solid #34c759; }
+        .sm-group-acc  { border-left: 3px solid #ff9500; }
     </style>
+    <script src="auth.js"></script>
 </head>
 <body>
 
@@ -304,6 +395,7 @@
         <input type="password" id="pass-input" placeholder="Введіть пароль" onkeypress="if(event.key==='Enter') checkPass()">
         <button onclick="checkPass()">Увійти</button>
         <p id="error-msg" class="error-msg">Невірний пароль. Спробуйте ще раз.</p>
+        <div id="access-denied-msg" class="error-msg" style="display:none">⛔ Недостатньо прав. Увійдіть як адміністратор.</div>
     </div>
 </div>
 
@@ -371,6 +463,20 @@
             </div>
         </div>
 
+        <!-- БЛОК ПОКАЗНИКИ МАГАЗИНУ -->
+        <div class="store-metrics-block" id="store-metrics-block">
+            <div class="store-metrics-header">
+                <div class="store-metrics-title">
+                    <span>🏪</span> Показники магазину
+                    <span class="store-metrics-date" id="sm-date">—</span>
+                </div>
+                <button class="store-metrics-refresh" onclick="loadStoreMetrics()">↻ Оновити</button>
+            </div>
+            <div id="store-metrics-content">
+                <div class="sm-loading">Завантаження...</div>
+            </div>
+        </div>
+
         <div id="sales-cards"></div>
     </div>
 
@@ -383,17 +489,14 @@
 </div>
 
 <script>
-    // --- АВТОРИЗАЦІЯ ---
-    const SECRET_PASSWORD = "gteam";
-    const EXPIRY_DAYS = 30;
+    // --- АВТОРИЗАЦІЯ (auth.js підключено у <head>) ---
 
     function checkPass() {
         const input = document.getElementById('pass-input').value;
         const error = document.getElementById('error-msg');
-        if (input === SECRET_PASSWORD) {
-            const now = new Date();
-            localStorage.setItem('auth_date', now.getTime());
-            localStorage.setItem('isAuthorized', 'true');
+        const role  = AUTH.checkPassword(input);
+        if (role) {
+            AUTH.save(role);
             unlockSite();
         } else {
             error.style.display = 'block';
@@ -465,24 +568,22 @@
         container.appendChild(cardsGrid);
     }
 
+    loadDayWeights();
     loadPlanData().then(() => loadData());
     renderSkeletons(5);
     }
 
     function logout() {
-        localStorage.removeItem('isAuthorized');
-        localStorage.removeItem('auth_date');
+        AUTH.clear();
         location.reload();
     }
 
     window.onload = function() {
-        const isAuth = localStorage.getItem('isAuthorized');
-        const authDate = localStorage.getItem('auth_date');
-        if (isAuth === 'true' && authDate) {
-            const now = new Date().getTime();
-            const expiryMs = EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-            if (now - authDate < expiryMs) { unlockSite(); } else { logout(); }
+        // Показати повідомлення якщо редирект через відмову в доступі
+        if (window.location.search.includes('access=denied')) {
+            document.getElementById('access-denied-msg').style.display = 'block';
         }
+        if (AUTH.isValid()) { unlockSite(); }
     };
 
     // --- CSV PARSER ---
@@ -739,6 +840,179 @@
         return r > 0 ? '-' + formatFull(r) : '✓';
     }
 
+    // --- АРКУШ 5: ВАГИ ДНІВ МІСЯЦЯ ---
+    // gid для аркуша 5 — підбираємо runtime; URL базовий той самий
+    const WEIGHTS_BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTOUXHhUpCkh6tgvNpJzY-w5tVrhPkvEeC0W0ZWuy2YxPayuO3pvahfeKYmMZ1DwHnILTpsJFNtXLsH/pub';
+    const WEIGHTS_GID = null; // ← вкажи gid аркуша 5 тут якщо автопошук не знайде (напр. 1234567890)
+    let dayWeights = []; // [{date: Date, weight: float}]
+
+    async function loadDayWeights() {
+        const gidsToTry = WEIGHTS_GID !== null
+            ? [WEIGHTS_GID]
+            : [1793183400, 473240415, 812345, 999999, 1234567890, 987654321, 11, 5, 4, 3, 2, 1, 0];
+        for (const gid of gidsToTry) {
+            try {
+                const url = WEIGHTS_BASE_URL + '?gid=' + gid + '&single=true&output=csv&t=' + Date.now();
+                const res = await fetch(url);
+                if (!res.ok) continue;
+                const text = await res.text();
+                const rows = parseCSV(text);
+                if (!rows.length) continue;
+                const hdr = rows[0].map(h => h.trim().toLowerCase());
+                const iDate = hdr.findIndex(h => h.includes('дат') || h === 'date');
+                const iWeight = hdr.findIndex(h => h.includes('дол') || h.includes('вага') || h.includes('weight') || h.includes('частка'));
+                if (iDate < 0 || iWeight < 0) continue;
+                const parsed = rows.slice(1).map(r => {
+                    const ds = (r[iDate] || '').trim();
+                    if (!ds) return null;
+                    // Формати: DD.MM.YYYY, YYYY-MM-DD, DD/MM/YYYY
+                    let d = null;
+                    const m1 = ds.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
+                    if (m1) {
+                        const y = m1[3].length === 2 ? 2000 + +m1[3] : +m1[3];
+                        d = new Date(y, +m1[2] - 1, +m1[1]);
+                    } else {
+                        d = new Date(ds);
+                    }
+                    if (isNaN(d)) return null;
+                    const w = parseFloat((r[iWeight] || '0').replace(',', '.')) || 0;
+                    return { date: d, weight: w };
+                }).filter(Boolean);
+                if (parsed.length > 0) { dayWeights = parsed; return; }
+            } catch(e) {}
+        }
+    }
+
+    // Нелінійний прогноз на основі ваг днів
+    function calcPrognoz(fact, plan, today) {
+        if (!dayWeights.length || !plan) return null;
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        // Фільтруємо ваги поточного місяця
+        const monthWeights = dayWeights.filter(w => w.date.getFullYear() === year && w.date.getMonth() === month);
+        if (!monthWeights.length) return null;
+        // Сортуємо за датою
+        monthWeights.sort((a, b) => a.date - b.date);
+        const totalWeight = monthWeights.reduce((s, w) => s + w.weight, 0);
+        if (!totalWeight) return null;
+        // Вага пройдених днів (включно з today)
+        const todayDay = today.getDate();
+        const passedWeight = monthWeights
+            .filter(w => w.date.getDate() <= todayDay)
+            .reduce((s, w) => s + w.weight, 0);
+        if (!passedWeight) return null;
+        // Прогноз = факт / частка_пройдених_днів
+        const prognoz = Math.round(fact / passedWeight * totalWeight);
+        return prognoz;
+    }
+
+    // --- STORE METRICS ---
+    async function loadStoreMetrics() {
+        document.getElementById('store-metrics-content').innerHTML = '<div class="sm-loading">Завантаження...</div>';
+        const promises = [];
+        if (!Object.keys(planData).length) promises.push(loadPlanData());
+        if (!dayWeights.length) promises.push(loadDayWeights());
+        if (promises.length) await Promise.all(promises);
+        renderStoreMetrics();
+    }
+
+    function renderStoreMetrics() {
+        const today = new Date();
+        const todayStr = today.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' });
+        document.getElementById('sm-date').textContent = todayStr;
+
+        // Шукаємо "Показники магазину" в currentData
+        const store = currentData.find(d => /показники магазину|тотал|total/i.test(d.name));
+        const pl = getPlan('Показники магазину') || getPlan('тотал') || getPlan('total');
+
+        const toFact   = store ? (store.metrics['ТО']?.value || 0) : 0;
+        const accFact  = store ? (store.metrics['ACC']?.value || 0) : 0;
+        const servFact = store ? (store.metrics['Послуги грн']?.value || store.metrics['Послуги']?.value || 0) : 0;
+        const accDola  = store ? (store.metrics['% Доля ACC']?.value || 0) : 0;
+        const servDola = store ? (store.metrics['Доля Послуг']?.value || 0) : 0;
+
+        const toPlan   = pl?.to   || 0;
+        const accPlan  = pl?.acc  || 0;
+        const servPlan = pl?.serv || 0;
+
+        const toProgn   = calcPrognoz(toFact,   toPlan,   today);
+        const accProgn  = calcPrognoz(accFact,  accPlan,  today);
+        const servProgn = calcPrognoz(servFact, servPlan, today);
+
+        function pctBadge(fact, plan) {
+            if (!plan) return '<span class="sm-pct" style="background:#f5f5f7;color:#6e6e73">—</span>';
+            const p = Math.round(fact / plan * 100);
+            const cls = p >= 100 ? 'pct-good' : p >= 70 ? 'pct-mid' : 'pct-bad';
+            return `<span class="sm-pct ${cls}">${p}%</span>`;
+        }
+        function fmtV(v) { return v ? formatFull(v) : '—'; }
+        function fmtP(v) { return v !== null ? formatFull(v) : '—'; }
+        function fmtRst(fact, plan) {
+            if (!plan) return '—';
+            const r = plan - fact;
+            return r > 0 ? '-' + formatFull(r) : '✓';
+        }
+        function fmtDola(v) { return v ? v.toFixed(2) + '%' : '—'; }
+
+        const colHdr = `
+            <div class="sm-col-hdr">
+                <span>Показник</span>
+                <span>Факт</span>
+                <span>Вик.</span>
+                <span>Прогноз</span>
+                <span>Залишок</span>
+            </div>`;
+
+        function row(label, fact, plan, prognoz, extraLeft = '') {
+            return `<div class="sm-row">
+                <div class="sm-label">${label}${extraLeft ? '<br><span style="font-size:9px;color:var(--color-text-secondary)">' + extraLeft + '</span>' : ''}</div>
+                <div class="sm-val">${fmtV(fact)}</div>
+                <div class="sm-pct-cell">${pctBadge(fact, plan)}</div>
+                <div class="sm-prognoz">${fmtP(prognoz)}</div>
+                <div class="sm-rest">${fmtRst(fact, plan)}</div>
+            </div>`;
+        }
+
+        const html = `
+        <div class="store-metrics-groups">
+            <div class="sm-group sm-group-to">
+                <div class="sm-group-title">💰 ТО</div>
+                ${colHdr}
+                <div class="sm-rows">
+                    <div class="sm-row">
+                        <div class="sm-label">План</div>
+                        <div class="sm-val" style="grid-column:2/6;color:var(--color-text-secondary)">${fmtV(toPlan)}</div>
+                    </div>
+                    ${row('Факт', toFact, toPlan, toProgn)}
+                </div>
+            </div>
+            <div class="sm-group sm-group-serv">
+                <div class="sm-group-title">🛠 Послуги</div>
+                ${colHdr}
+                <div class="sm-rows">
+                    <div class="sm-row">
+                        <div class="sm-label">План</div>
+                        <div class="sm-val" style="grid-column:2/6;color:var(--color-text-secondary)">${fmtV(servPlan)}</div>
+                    </div>
+                    ${row('Факт', servFact, servPlan, servProgn, 'Доля: ' + fmtDola(servDola))}
+                </div>
+            </div>
+            <div class="sm-group sm-group-acc">
+                <div class="sm-group-title">🎧 АСС</div>
+                ${colHdr}
+                <div class="sm-rows">
+                    <div class="sm-row">
+                        <div class="sm-label">План</div>
+                        <div class="sm-val" style="grid-column:2/6;color:var(--color-text-secondary)">${fmtV(accPlan)}</div>
+                    </div>
+                    ${row('Факт', accFact, accPlan, accProgn, 'Доля: ' + fmtDola(accDola))}
+                </div>
+            </div>
+        </div>`;
+
+        document.getElementById('store-metrics-content').innerHTML = html;
+    }
+
     // --- ДАНІ КАРТОК ---
     let currentData = [];
 
@@ -879,6 +1153,7 @@
 
             currentData = [storeTotals, ...currentData];
             renderCards(currentData);
+            renderStoreMetrics();
         } catch (error) {
             console.error('Помилка завантаження даних з Google Sheets:', error);
             // Fallback: спробуємо статичний JSON
@@ -886,6 +1161,7 @@
                 const response = await fetch('sales-data.json?t=' + Date.now());
                 currentData = await response.json();
                 renderCards(currentData);
+                renderStoreMetrics();
             } catch (e) { console.error('Fallback теж не спрацював:', e); }
         }
     }
@@ -910,16 +1186,20 @@
         carouselWrapper.className = 'carousel-wrapper';
 
         const createBanner = (title, subtitle, icon, colorClass, href, isBlank = false) => {
-            const banner = document.createElement('a');
-            banner.className = `banner-card banner-${colorClass}`;
-            banner.href = href;
-            if (isBlank) banner.target = '_blank';
+            const filename = href.split('/').pop().split('?')[0];
+            const locked = AUTH.adminOnly.includes(filename) && AUTH.getRole() !== 'admin';
+            const banner = document.createElement(locked ? 'div' : 'a');
+            banner.className = `banner-card banner-${colorClass}${locked ? ' banner-locked' : ''}`;
+            if (!locked) {
+                banner.href = href;
+                if (isBlank) banner.target = '_blank';
+            }
             banner.innerHTML = `
                 <div class="banner-top">
-                    <div class="banner-icon">${icon.img}</div>
-                    <div class="banner-content"><h2>${title}</h2><p>${subtitle}</p></div>
+                    <div class="banner-icon">${locked ? '🔒' : icon.img}</div>
+                    <div class="banner-content"><h2>${title}</h2><p>${locked ? 'Тільки для адміністратора' : subtitle}</p></div>
                 </div>
-                <div class="banner-footer"><div class="banner-cta">Переглянути →</div></div>`;
+                <div class="banner-footer"><div class="banner-cta">${locked ? '' : 'Переглянути →'}</div></div>`;
             return banner;
         };
 
