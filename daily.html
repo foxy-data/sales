@@ -95,8 +95,10 @@
             background: var(--card); border-radius: 16px;
             border: 1px solid var(--border);
             box-shadow: var(--shadow);
-            overflow-x: auto; -webkit-overflow-scrolling: touch;
-            overscroll-behavior-x: contain;
+            overflow: auto;
+            max-height: calc(100vh - 120px);
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
         }
         table { border-collapse: collapse; table-layout: fixed; }
 
@@ -133,23 +135,26 @@
         }
         .grp-start { border-left: 2px solid rgba(0,0,0,0.07) !important; }
 
-        /* Sticky перша колонка — спільне */
+        /* Sticky thead — прилипає до верху таблиці (не до сторінки) */
+        thead th { position: sticky; z-index: 10; }
+        thead tr:first-child th  { top: 0; }
+        thead tr:nth-child(2) th { top: 24px; }
+
+        /* Sticky перша колонка */
         th:first-child, td.name-cell {
-            position: sticky; left: 0; z-index: 100;
+            position: sticky; left: 0;
             white-space: normal; word-break: break-word;
             text-align: left; line-height: 1.35;
             box-shadow: 3px 0 8px -2px rgba(0,0,0,0.15);
             border-right: 2px solid rgba(0,0,0,0.12);
         }
-        /* Шапка першої колонки — темна */
         th:first-child {
             background: var(--header-bg); color: rgba(255,255,255,0.8);
-            font-size: 9px; font-weight: 700; z-index: 101;
+            font-size: 9px; font-weight: 700; z-index: 20;
         }
-        /* Тіло першої колонки — біла */
         td.name-cell {
             background: var(--card) !important; color: var(--text);
-            font-weight: 600; font-size: 11.5px;
+            font-weight: 600; font-size: 11px; z-index: 5;
         }
 
         /* ── Бейджи ── */
@@ -169,14 +174,16 @@
         .time-row td.name-cell { background: #e8eaf0 !important; color: #3a3a4a !important; }
         .summary-row td           { background: #dde9ff !important; font-weight: 700; color: #1a2a5a !important; border-top: 2px solid #a8bce8; }
         .summary-row td.name-cell { background: #cdd9ff !important; color: #1a2a5a !important; }
+        /* Останні рядки (Тотал, Виконання, Залишок) — явний override щоб не перекривати sticky bg */
+        tr.summary-row td.name-cell { background: #cdd9ff !important; }
+        tr.time-row    td.name-cell { background: #e8eaf0 !important; }
 
         .loading { padding: 40px; text-align: center; color: #86868b; }
         .error   { padding: 40px; text-align: center; color: #ff3b30; }
 
         @media (max-width: 767px) {
             .table-card { scroll-snap-type: x mandatory; scroll-padding-left: 90px; }
-            .name-cell, th:first-child { width: 90px; min-width: 90px; max-width: 90px; font-size: 10px; padding: 5px 6px; z-index: 200 !important; background-clip: padding-box; }
-            th:first-child { z-index: 201 !important; }
+            .name-cell, th:first-child { width: 90px; min-width: 90px; max-width: 90px; font-size: 10px; padding: 5px 6px; background-clip: padding-box; }
             td { font-size: 11.5px; padding: 5px 3px; }
             th { font-size: 8.5px; padding: 6px 3px; }
             th.group-header { font-size: 9px; padding: 6px 3px; }
@@ -424,7 +431,7 @@ let isCompact = false;
 // ===== РЕНДЕР ТАБЛИЦІ =====
 function renderTable(headers, rows, compact) {
     const isMob = window.innerWidth < 768;
-    const nameW = isMob ? 90 : 160;
+    const nameW = 90;
     const avail = window.innerWidth - nameW - 1;
 
     // Фільтруємо колонки якщо compact
@@ -602,6 +609,15 @@ function renderTable(headers, rows, compact) {
     }
 
     if (!compact) colorizeShareCols(headers);
+
+    // Фікс sticky thead — другий рядок thead має top = висота першого рядка
+    requestAnimationFrame(() => {
+        const theadRows = thead.querySelectorAll('tr');
+        if (theadRows.length >= 2) {
+            const row1H = theadRows[0].getBoundingClientRect().height;
+            theadRows[1].querySelectorAll('th').forEach(th => { th.style.top = row1H + 'px'; });
+        }
+    });
 
     // Scroll snap (тільки повний режим мобільний)
     if (isMobMode && !compact) {
